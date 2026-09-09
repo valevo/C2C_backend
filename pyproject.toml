@@ -1,0 +1,14 @@
+[project]
+name = "comment2conversation-backend"
+version = "0.1"
+description = "WebSocket backend for Comment2Conversation"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = ["websockets", "httpx", "pytest"]

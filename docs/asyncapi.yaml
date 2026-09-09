@@ -19,7 +19,7 @@ servers:
   local:
     host: 127.0.0.1:8000
     protocol: ws
-    description: Development server started with `python api.py`.
+    description: Development server started with `python -m app.main`.
 channels:
   ws:
     address: /ws

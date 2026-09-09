@@ -1,16 +1,20 @@
-"""Generate asyncapi.yaml from the message models used by api.py.
+"""Generate docs/asyncapi.yaml from the message models used by the app.
 
-Run:  python gen_asyncapi.py
+Run from anywhere:  python docs/gen_asyncapi.py
 """
 
+import sys
+from pathlib import Path
 from typing import get_args
 
 import yaml
-from pydantic import TypeAdapter
 from pydantic.json_schema import models_json_schema
 
-import api  # noqa: F401  (imported for the app title / version and to make sure it loads)
-from models import IncomingMessage, OutgoingMessage
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from app.main import app  # noqa: E402
+from app.models import IncomingMessage, OutgoingMessage  # noqa: E402
 
 REF = "#/components/schemas/{model}"
 
@@ -59,8 +63,8 @@ channel_messages = {snake(m.__name__): {"$ref": f"#/components/messages/{m.__nam
 spec = {
     "asyncapi": "3.0.0",
     "info": {
-        "title": api.app.title,
-        "version": api.app.version,
+        "title": app.title,
+        "version": app.version,
         "description": (
             "WebSocket API of the Comment2Conversation backend.\n\n"
             "A single channel `/ws` carries JSON envelopes of the form "
@@ -77,7 +81,7 @@ spec = {
         "local": {
             "host": "127.0.0.1:8000",
             "protocol": "ws",
-            "description": "Development server started with `python api.py`.",
+            "description": "Development server started with `python -m app.main`.",
         }
     },
     "channels": {
@@ -112,7 +116,7 @@ spec = {
     },
 }
 
-with open("asyncapi.yaml", "w", encoding="utf-8") as f:
+with (ROOT / "docs" / "asyncapi.yaml").open("w", encoding="utf-8") as f:
     yaml.safe_dump(spec, f, sort_keys=False, allow_unicode=True, width=100)
 
 print(f"asyncapi.yaml: {len(messages)} messages, {len(schemas)} schemas")
