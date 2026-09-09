@@ -1,0 +1,251 @@
+asyncapi: 3.0.0
+info:
+  title: Comment2Conversation
+  version: '0.1'
+  description: 'WebSocket API of the Comment2Conversation backend.
+
+
+    A single channel `/ws` carries JSON envelopes of the form `{"type": <tag>, "payload": {...}}` in both
+    directions. `type` discriminates the payload schema.
+
+
+    Clients are assigned an anonymous ID per connection; it is never part of a payload. Validation failures
+    are answered with `{"error": [...]}` (Pydantic error list) on the same connection.
+
+
+    The REST endpoint `GET /db` is documented by the OpenAPI spec, not here.'
+defaultContentType: application/json
+servers:
+  local:
+    host: 127.0.0.1:8000
+    protocol: ws
+    description: Development server started with `python api.py`.
+channels:
+  ws:
+    address: /ws
+    description: Bidirectional channel. One connection per client.
+    messages:
+      comment_create_message:
+        $ref: '#/components/messages/CommentCreateMessage'
+      flag_create_message:
+        $ref: '#/components/messages/FlagCreateMessage'
+      comment_render_message:
+        $ref: '#/components/messages/CommentRenderMessage'
+      new_comment_render_message:
+        $ref: '#/components/messages/NewCommentRenderMessage'
+      conversation_starter_render_message:
+        $ref: '#/components/messages/ConversationStarterRenderMessage'
+operations:
+  receiveFromClient:
+    action: receive
+    channel:
+      $ref: '#/channels/ws'
+    summary: Messages the server accepts from a client.
+    messages:
+    - $ref: '#/channels/ws/messages/comment_create_message'
+    - $ref: '#/channels/ws/messages/flag_create_message'
+  broadcastToClients:
+    action: send
+    channel:
+      $ref: '#/channels/ws'
+    summary: Messages the server broadcasts to every connected client.
+    description: Every 3–7 s the server broadcasts either a freshly submitted comment (`new_comment`)
+      or a randomly chosen statement from the database (`comment` or `conversation_starter`), alternating
+      the `slot`.
+    messages:
+    - $ref: '#/channels/ws/messages/comment_render_message'
+    - $ref: '#/channels/ws/messages/new_comment_render_message'
+    - $ref: '#/channels/ws/messages/conversation_starter_render_message'
+components:
+  messages:
+    CommentCreateMessage:
+      name: CommentCreateMessage
+      title: CommentCreateMessage
+      summary: 'client → server: `type` = "comment"'
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/CommentCreateMessage'
+    FlagCreateMessage:
+      name: FlagCreateMessage
+      title: FlagCreateMessage
+      summary: 'client → server: `type` = "flag"'
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/FlagCreateMessage'
+    CommentRenderMessage:
+      name: CommentRenderMessage
+      title: CommentRenderMessage
+      summary: 'server → client: `type` = "comment"'
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/CommentRenderMessage'
+    NewCommentRenderMessage:
+      name: NewCommentRenderMessage
+      title: NewCommentRenderMessage
+      summary: 'server → client: `type` = "new_comment"'
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/NewCommentRenderMessage'
+    ConversationStarterRenderMessage:
+      name: ConversationStarterRenderMessage
+      title: ConversationStarterRenderMessage
+      summary: 'server → client: `type` = "conversation_starter"'
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConversationStarterRenderMessage'
+  schemas:
+    CommentCreate:
+      properties:
+        text:
+          description: Comment body, plain text
+          title: Text
+          type: string
+        reply_to:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          default: null
+          description: The ID of the comment that this comment is a reply to. None (null) if it is not
+            a reply to any comment. The presence of this property distinguishes comments created by clicking
+            on an existing comment vs using the 'ik wil iets anders zeggen' button.
+          title: Reply To
+      required:
+      - text
+      title: CommentCreate
+      type: object
+    CommentCreateMessage:
+      properties:
+        type:
+          const: comment
+          default: comment
+          title: Type
+          type: string
+        payload:
+          $ref: '#/components/schemas/CommentCreate'
+      required:
+      - payload
+      title: CommentCreateMessage
+      type: object
+    CommentRender:
+      properties:
+        ID:
+          title: Id
+          type: integer
+        text:
+          description: Comment body, plain text
+          title: Text
+          type: string
+        slot:
+          description: Where to render the comment, either in the top field or the bottom field.
+          enum:
+          - top
+          - bottom
+          title: Slot
+          type: string
+        is_flagged:
+          title: Is Flagged
+          type: boolean
+      required:
+      - ID
+      - text
+      - slot
+      - is_flagged
+      title: CommentRender
+      type: object
+    CommentRenderMessage:
+      properties:
+        type:
+          const: comment
+          default: comment
+          title: Type
+          type: string
+        payload:
+          $ref: '#/components/schemas/CommentRender'
+      required:
+      - payload
+      title: CommentRenderMessage
+      type: object
+    ConversationStarterRender:
+      properties:
+        ID:
+          title: Id
+          type: integer
+        text:
+          description: Comment body, plain text
+          title: Text
+          type: string
+      required:
+      - ID
+      - text
+      title: ConversationStarterRender
+      type: object
+    ConversationStarterRenderMessage:
+      properties:
+        type:
+          const: conversation_starter
+          default: conversation_starter
+          title: Type
+          type: string
+        payload:
+          $ref: '#/components/schemas/ConversationStarterRender'
+      required:
+      - payload
+      title: ConversationStarterRenderMessage
+      type: object
+    FlagCreate:
+      properties:
+        reason:
+          title: Reason
+          type: string
+        donotshow:
+          title: Donotshow
+          type: boolean
+        comment_ID:
+          title: Comment Id
+          type: integer
+      required:
+      - reason
+      - donotshow
+      - comment_ID
+      title: FlagCreate
+      type: object
+    FlagCreateMessage:
+      properties:
+        type:
+          const: flag
+          default: flag
+          title: Type
+          type: string
+        payload:
+          $ref: '#/components/schemas/FlagCreate'
+      required:
+      - payload
+      title: FlagCreateMessage
+      type: object
+    NewCommentRender:
+      properties:
+        ID:
+          title: Id
+          type: integer
+        text:
+          description: Comment body, plain text
+          title: Text
+          type: string
+      required:
+      - ID
+      - text
+      title: NewCommentRender
+      type: object
+    NewCommentRenderMessage:
+      properties:
+        type:
+          const: new_comment
+          default: new_comment
+          title: Type
+          type: string
+        payload:
+          $ref: '#/components/schemas/NewCommentRender'
+      required:
+      - payload
+      title: NewCommentRenderMessage
+      type: object

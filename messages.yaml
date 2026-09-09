@@ -1,0 +1,117 @@
+# Static user-facing strings, keyed by message ID and then by ISO 639-1 language code.
+# Supported languages: en, nl, fr (must match LanguageCode in models.py).
+
+meta:
+  supported_languages: en, nl, fr
+  last_edited: 2026-09-09T18:44:00
+  
+
+
+
+welcome:
+  introduction:
+    en: Welcome
+    nl: Welkom
+    fr: Bienvenue
+  no_cookies:
+    en: We don't use cookies
+    nl: We gebruiken geen cookies
+    fr: Nous n'utilisons pas de cookies
+  agree:
+    en: Okay
+    nl: Oke
+    fr: D'accord
+
+
+main:
+  about:
+    en: what is C2C?
+    nl: wat is C2C?
+    fr: qu'est-ce que C2C ?
+  rules:
+    en: rules of the game
+    nl: spelregels
+    fr: règles du jeu
+  reply_comment_button:
+    en: Click on a comment above ↑ to join the conversation
+    nl: Klik op een reactie hierboven ↑ om deel te nemen aan het gesprek
+    fr: Cliquez sur un commentaire ci-dessus ↑ pour participer à la conversation
+  new_comment_button:
+    en: Click here ← to start a new conversation
+    nl: Klik hier ← om een nieuw gesprek te starten
+    fr: Cliquez ici ← pour commencer une nouvelle conversation
+  flag_button:
+    en: Flag this comment
+    nl: Meld deze reactie
+    fr: Signaler ce commentaire
+
+
+
+new_comment:
+  topics:
+    belgian_democracy:
+      en: Belgian democracy
+      nl: Belgische democratie
+      fr: Democratie belge
+    exclusion_disillusion:
+      en: Exclusion and disillusion
+      nl: Uitsluiting en desillusie
+      fr: Exclusion et desillusion
+    what_is_democracy:
+      en: What is democracy?
+      nl: Wat is democratie?
+      fr: Qu'est-ce que la democratie?
+    everyday_democracy:
+      en: Everyday democracy
+      nl: Dagelijkse democratie
+      fr: Democratie quotidienne
+    direct_democracy:
+      en: Direct democracy
+      nl: Directe democratie
+      fr: Democratie directe
+    museums_democracy:
+      en: Museums and democracy?
+      nl: Musea en democratie?
+      fr: Musees et la democratie?
+    ecocracy:
+      en: Ecocracy
+      nl: Ecocratie
+      fr: Ecocratie
+    protest:
+      en: Protest
+      nl: Protest
+      fr: Protestation
+  tickbox:
+    en: My comment is sincere and may be shown publicly
+    nl: Mijn opmerking is oprecht en mag openbaar worden getoond
+    fr: Mon commentaire est sincère et peut être affiché publiquement
+  button:
+    en: Send
+    nl: Stuur
+    fr: Envoyer
+
+new_comment_result:
+  note:
+    en: Thank you for your contribution. Your comment has been added to the conversation.
+    nl: Bedankt voor uw bijdrage. Uw opmerking is toegevoegd aan de conversatie.
+    fr: Merci pour votre contribution. Votre commentaire a été ajouté à la conversation.
+
+flag:
+  reason:
+    en: Text here is optional...
+    nl: Tekst hier is optioneel...
+    fr: Le texte ici est facultatif...
+  donotshow:
+    en: This comment should not be public
+    nl: Deze opmerking zou niet openbaar mogen zijn
+    fr: Ce commentaire ne devrait pas être public
+
+error:
+  invalid_message:
+    en: The message could not be understood.
+    nl: Het bericht kon niet worden verwerkt.
+    fr: Le message n'a pas pu être traité.
+  comment_not_found:
+    en: This comment does not exist.
+    nl: Deze reactie bestaat niet.
+    fr: Ce commentaire n'existe pas.

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>C2C WebSocket Test Client</title>
+<style>
+  body { font-family: monospace; max-width: 760px; margin: 40px auto; }
+  h3 { margin-top: 28px; }
+  #log {
+    border: 1px solid #ccc;
+    height: 260px;
+    overflow-y: auto;
+    padding: 8px;
+    white-space: pre-wrap;
+    background: #f7f7f7;
+    font-size: 12px;
+  }
+  #controls { display: flex; gap: 8px; margin-top: 10px; }
+  #payload { flex: 1; font-family: monospace; }
+  select, button, input, textarea { padding: 6px; }
+  .slot {
+    border: 1px solid #ccc;
+    padding: 8px;
+    margin: 4px 0;
+    min-height: 2em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .slot .label { color: #888; width: 4em; }
+  .slot .text { flex: 1; }
+  .slot.flagged .text { filter: blur(3px); }
+  .slot .kind { color: #888; font-size: 11px; width: 11em; }
+  .slot.starter { border-color: #48a; background: #eef4fb; }
+  .slot.new { background: #222; color: #eee; }
+  .slot.new .label { color: #aaa; }
+  #db { font-size: 12px; white-space: pre; overflow-x: auto; background: #f7f7f7; padding: 8px; }
+</style>
+</head>
+<body>
+  <h2>C2C WebSocket Test Client</h2>
+
+  <div>
+    <label>Server:
+      <input id="wsUrl" size="30" value="ws://127.0.0.1:8000/ws" />
+    </label>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <span id="status">disconnected</span>
+  </div>
+
+  <h3>Live view</h3>
+  <p>The server broadcasts a message every few seconds, alternating between the
+     top and bottom slot. Each message has a <code>type</code> tag: comments and
+     conversation starters land in a slot, new comments in the dark row. Flagged
+     comments are blurred, conversation starters are highlighted with their topics.
+     "Reply" and "Flag" prefill the message template with that comment's ID.</p>
+  <div class="slot" id="slot-top">
+    <span class="label">top</span>
+    <span class="kind"></span>
+    <span class="text"></span>
+    <button onclick="prefillReply('top')">Reply</button>
+    <button onclick="prefillFlag('top')">Flag</button>
+  </div>
+  <div class="slot" id="slot-bottom">
+    <span class="label">bottom</span>
+    <span class="kind"></span>
+    <span class="text"></span>
+    <button onclick="prefillReply('bottom')">Reply</button>
+    <button onclick="prefillFlag('bottom')">Flag</button>
+  </div>
+  <div class="slot new" id="slot-new">
+    <span class="label">new</span>
+    <span class="text"></span>
+  </div>
+
+  <h3>Send a message</h3>
+  <div id="controls">
+    <select id="msgType" onchange="loadTemplate()">
+      <option value="comment">comment</option>
+      <option value="flag">flag</option>
+    </select>
+    <textarea id="payload" rows="6"></textarea>
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <h3>Log</h3>
+  <div id="log"></div>
+  <button onclick="clearLog()">Clear</button>
+
+  <h3>Database</h3>
+  <button onclick="fetchDB()">GET /db</button>
+  <pre id="db"></pre>
+
+<script>
+  let ws = null;
+
+  // Latest comment shown in each slot, keyed by slot name.
+  const slots = { top: null, bottom: null };
+
+  const templates = {
+    comment: { type: "comment", payload: { text: "", reply_to: null } },
+    flag:    { type: "flag",    payload: { reason: "", donotshow: false, comment_ID: 1 } },
+  };
+
+  function log(direction, text) {
+    const logDiv = document.getElementById("log");
+    const line = document.createElement("div");
+    const ts = new Date().toLocaleTimeString();
+    line.textContent = `${ts} ${direction} ${text}`;
+    logDiv.appendChild(line);
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
+
+  function clearLog() {
+    document.getElementById("log").textContent = "";
+  }
+
+  function setTemplate(obj) {
+    document.getElementById("payload").value = JSON.stringify(obj, null, 2);
+  }
+
+  function loadTemplate() {
+    const type = document.getElementById("msgType").value;
+    setTemplate(templates[type]);
+  }
+
+  function renderSlot(kind, p) {
+    slots[p.slot] = p;
+    const el = document.getElementById(`slot-${p.slot}`);
+    let text = `#${p.ID}: ${p.text}`;
+    if (kind === "conversation_starter" && p.topics && p.topics.length) {
+      text += `  [${p.topics.join(", ")}]`;
+    }
+    el.querySelector(".text").textContent = text;
+    el.querySelector(".kind").textContent = kind;
+    el.classList.toggle("flagged", p.is_flagged === true);
+    el.classList.toggle("starter", kind === "conversation_starter");
+  }
+
+  function renderNew(msg) {
+    const el = document.getElementById("slot-new");
+    el.querySelector(".text").textContent = `#${msg.ID}: ${msg.text}`;
+  }
+
+  function prefillReply(slot) {
+    const msg = slots[slot];
+    if (!msg) { log("!", `nothing in ${slot} slot yet`); return; }
+    document.getElementById("msgType").value = "comment";
+    setTemplate({ type: "comment", payload: { text: "", reply_to: msg.ID } });
+  }
+
+  function prefillFlag(slot) {
+    const msg = slots[slot];
+    if (!msg) { log("!", `nothing in ${slot} slot yet`); return; }
+    document.getElementById("msgType").value = "flag";
+    setTemplate({ type: "flag", payload: { reason: "", donotshow: false, comment_ID: msg.ID } });
+  }
+
+  function handleMessage(raw) {
+    let msg;
+    try {
+      msg = JSON.parse(raw);
+    } catch (e) {
+      log("<-", raw);
+      return;
+    }
+    log("<-", raw);
+    if (msg.error) {
+      log("!", "server rejected message: " + JSON.stringify(msg.error));
+      return;
+    }
+    switch (msg.type) {
+      case "comment":
+      case "conversation_starter":
+        renderSlot(msg.type, msg.payload);
+        break;
+      case "new_comment":
+        renderNew(msg.payload);
+        break;
+      default:
+        log("!", "unknown message type: " + JSON.stringify(msg.type));
+    }
+  }
+
+  function connect() {
+    if (ws && ws.readyState === WebSocket.OPEN) { log("!", "already connected"); return; }
+    const url = document.getElementById("wsUrl").value;
+    ws = new WebSocket(url);
+    ws.onopen = () => {
+      document.getElementById("status").textContent = "connected";
+      log("*", "connection opened");
+    };
+    ws.onmessage = (event) => handleMessage(event.data);
+    ws.onclose = (event) => {
+      document.getElementById("status").textContent = "disconnected";
+      log("*", `connection closed (code ${event.code})`);
+    };
+    ws.onerror = (err) => {
+      log("!", "error (see browser console)");
+      console.error(err);
+    };
+  }
+
+  function disconnect() {
+    if (ws) ws.close();
+  }
+
+  function sendMessage() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) { log("!", "not connected"); return; }
+    const raw = document.getElementById("payload").value;
+    try {
+      JSON.parse(raw);   // validate, but send the raw text so it round-trips as typed
+      ws.send(raw);
+      log("->", raw);
+    } catch (e) {
+      log("!", "invalid JSON: " + e.message);
+    }
+  }
+
+  async function fetchDB() {
+    const base = document.getElementById("wsUrl").value.replace(/^ws/, "http").replace(/\/ws$/, "");
+    try {
+      const res = await fetch(base + "/db");
+      const data = await res.json();
+      document.getElementById("db").textContent = JSON.stringify(data, null, 2);
+    } catch (e) {
+      log("!", "GET /db failed: " + e.message);
+    }
+  }
+
+  window.onload = loadTemplate;
+</script>
+</body>
+</html>
