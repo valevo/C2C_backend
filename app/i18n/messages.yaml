@@ -17,8 +17,12 @@ welcome:
     en: We don't use cookies
     nl: We gebruiken geen cookies
     fr: Nous n'utilisons pas de cookies
+  description:
+    en: Comment to Conversation generates no new content. It only stores comments and rearranges them into ever-changing conversations.
+    nl: Van Commentaar tot Conversatie genereert geen nieuwe inhoud. Het slaat alleen opmerkingen op en herschikt ze tot steeds veranderende gesprekken.
+    fr: Du Commentaire à la Conversation ne génère aucun nouveau contenu. Il se contente d’enregistrer des commentaires et de les réorganiser en conversations en perpétuelle évolution.
   agree:
-    en: Okay
+    en: Ok
     nl: Oke
     fr: D'accord
 
@@ -29,9 +33,9 @@ main:
     nl: wat is C2C?
     fr: qu'est-ce que C2C ?
   rules:
-    en: rules of the game
+    en: terms
     nl: spelregels
-    fr: règles du jeu
+    fr: conditions
   reply_comment_button:
     en: Click on a comment above ↑ to join the conversation
     nl: Klik op een reactie hierboven ↑ om deel te nemen aan het gesprek
@@ -44,7 +48,6 @@ main:
     en: Flag this comment
     nl: Meld deze reactie
     fr: Signaler ce commentaire
-
 
 
 new_comment:
@@ -98,9 +101,9 @@ new_comment_result:
 
 flag:
   reason:
-    en: Text here is optional...
-    nl: Tekst hier is optioneel...
-    fr: Le texte ici est facultatif...
+    en: Optionally, share your reason for flagging this comment
+    nl: Licht eventueel toe waarom je deze reactie meldt
+    fr: Si vous le souhaitez, indiquez pourquoi vous signalez ce commentaire
   donotshow:
     en: This comment should not be public
     nl: Deze opmerking zou niet openbaar mogen zijn
