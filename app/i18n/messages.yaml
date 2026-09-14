@@ -6,7 +6,17 @@ meta:
   last_edited: 2026-09-09T18:44:00
   
 
+example: |
+  this is a multi-line string
 
+  it has paragraphs, weird characters :*&@#(*E&YUHJ"!L@#K"!P#)OI{_!#(*$)&!&#*T and whatever else you need.
+
+  the important thing is the two spaces in front of it -> this indicates that the multi-line string isn't over yet
+second_key: "here, the multi-line string is over"
+  nested_key: |
+    another multi-line string, that's nested inside of a key
+    notice the indentation
+  second_nested_key: 13
 
 welcome:
   introduction:
