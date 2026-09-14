@@ -4,19 +4,6 @@
 meta:
   supported_languages: en, nl, fr
   last_edited: 2026-09-09T18:44:00
-  
-
-example: |
-  this is a multi-line string
-
-  it has paragraphs, weird characters :*&@#(*E&YUHJ"!L@#K"!P#)OI{_!#(*$)&!&#*T and whatever else you need.
-
-  the important thing is the two spaces in front of it -> this indicates that the multi-line string isn't over yet
-second_key: "here, the multi-line string is over"
-  nested_key: |
-    another multi-line string, that's nested inside of a key
-    notice the indentation
-  second_nested_key: 13
 
 welcome:
   introduction:
@@ -197,6 +184,196 @@ aboutpage:
         Het project is mogelijk gemaakt met steun van het Nationale Loterij Fonds voor Democratie, beheerd door de Koning Boudewijnstichting.
     fr: C2C est développé par Jon Stam, chercheur et designer d’interaction, et Valentin Vogelmann, data scientist. Le projet fait partie de la recherche doctorale de Jon Stam à LUCA School of Arts et KU Leuven, consacrée aux outils de médiation participative dans les espaces muséaux. Contact : jon.stam@luca-arts.be
         Le projet est rendu possible grâce au soutien du Nationale Loterij Fonds voor Democratie, géré par la Fondation Roi Baudouin.
+terms:
+  terms_title:
+    en: Terms
+    nl: Spelregels
+    fr: Conditions
+  
+  term_1_title:
+    en: How do I join a conversation?
+    nl: Hoe neem ik deel aan een gesprek?
+    fr: Comment participer à une conversation?
+  
+  term_1:
+    en: |
+      To join a conversation, tap a comment you want to respond to, write your response, confirm that it can be made public, and tap submit.
+      Your response will interrupt the ongoing conversation and become part of the public exchange, bringing in comments from others based on connections with what has been said.
+      Think of it as a noticeboard of responses left by people in this room, except that the notes are continually rearranged to bring different connections between them into view.
+    nl: |
+      Om deel te nemen aan een gesprek, tik je op een reactie waarop je wilt reageren, schrijf je je antwoord, bevestig je dat het openbaar mag worden gemaakt en tik je op verzenden.
+      Je reactie onderbreekt het lopende gesprek en wordt onderdeel van de publieke uitwisseling. Daarbij worden reacties van anderen ingebracht op basis van verbanden met wat er is gezegd.
+      Zie het als een prikbord met reacties van mensen die in deze ruimte zijn geweest, alleen worden de briefjes voortdurend opnieuw gerangschikt om verschillende verbanden ertussen zichtbaar te maken.
+    fr: |
+      Pour participer à une conversation, touchez un commentaire auquel vous souhaitez répondre, écrivez votre réponse, confirmez qu’elle peut être rendue publique, puis appuyez sur envoyer.
+      Votre réponse interrompt la conversation en cours et rejoint l’échange public. C2C y associe ensuite des commentaires d’autres personnes en fonction des liens avec ce qui a été dit.
+      Imaginez un panneau où sont affichées les réactions laissées par les personnes passées dans cette salle, sauf que les notes sont continuellement réorganisées pour faire apparaître différents liens entre elles.
+  
+  term_2_title:
+    en: Why engage in a conversation?
+    nl: Waarom deelnemen aan een gesprek?
+    fr: Pourquoi participer à une conversation?
+  
+  term_2:
+    en: |
+      You don’t have to. Museum exhibitions take shape through many conversations, and we believe there is an ethical responsibility to make room for the people who visit them to join in.
+      Conversation also offers something that expressing an opinion alone cannot: the possibility of encountering another perspective, responding to it, and perhaps seeing your own differently.
+      C2C creates space for that possibility without assuming every exchange will be meaningful or lead somewhere. If you would rather exchange with other visitors outside of C2C, even better.
+    nl: |
+      Dat hoeft niet. Museumtentoonstellingen krijgen vorm door vele gesprekken, en wij vinden dat er een ethische verantwoordelijkheid is om ruimte te maken voor de mensen die ze bezoeken om daaraan deel te nemen.
+      Een gesprek biedt ook iets wat alleen je mening geven niet kan: de mogelijkheid om een ander perspectief tegen te komen, erop te reageren en misschien ook anders naar je eigen perspectief te kijken.
+      C2C maakt ruimte voor die mogelijkheid, zonder ervan uit te gaan dat elke uitwisseling betekenisvol zal zijn of ergens toe zal leiden. Praat je liever rechtstreeks met andere bezoekers buiten C2C? Des te beter.
+    fr: |
+      Vous n’êtes pas obligé de participer. Les expositions prennent forme à travers de nombreuses conversations, et nous pensons qu’il existe une responsabilité éthique : faire une place aux personnes qui les visitent pour qu’elles puissent y prendre part.
+      Une conversation offre aussi quelque chose que la simple expression d’une opinion ne permet pas : rencontrer un autre point de vue, y répondre et peut-être voir le sien autrement.
+      C2C crée un espace pour cette possibilité, sans supposer que chaque échange sera pertinent ou mènera quelque part. Si vous préférez échanger directement avec d’autres visiteurs en dehors de C2C, tant mieux.
+  
+  term_3_title:
+    en: Who is responsible for the conversation?
+    nl: Wie is verantwoordelijk voor het gesprek?
+    fr: Qui est responsable de la conversation?
+  
+  term_3:
+    en: |
+      Responsibility is shared. You are responsible for what you contribute, C2C shapes which comments are brought together, and the museum sets the conditions in which this happens.
+      We think of this as a shared “response”-ability: the possibility not only to speak, but to listen and remain open to responding.
+    nl: |
+      De verantwoordelijkheid is gedeeld. Jij bent verantwoordelijk voor wat je bijdraagt, C2C bepaalt welke reacties bij elkaar worden gebracht en het museum bepaalt de voorwaarden waarbinnen dit gebeurt.
+      We zien dit als een gedeelde ‘response’-ability: de mogelijkheid om niet alleen te spreken, maar ook te luisteren en open te blijven staan voor een reactie.
+    fr: |
+      La responsabilité est partagée. Vous êtes responsable de ce que vous apportez, C2C détermine quels commentaires sont mis en relation, et le musée définit les conditions dans lesquelles cela se passe.
+      Nous considérons cela comme une « response-ability » partagée : la possibilité non seulement de parler, mais aussi d’écouter et de rester ouvert à une réponse.
+  
+  term_4_title:
+    en: What are the limits of speech?
+    nl: Waar liggen de grenzen van wat je kunt zeggen?
+    fr: Quelles sont les limites de ce que l’on peut dire?
+  
+  term_4:
+    en: |
+      Dialogue needs room for disagreement, discomfort, and views we may not share. But that does not mean anything goes.
+      Contributions that discriminate against or attack others, reveal someone’s identity or contain private personal information, will be taken out of rotation.
+      The aim is not to eliminate disagreement, but to maintain conditions in which people can continue to participate.
+    nl: |
+      Dialoog heeft ruimte nodig voor onenigheid, ongemak en opvattingen die we misschien niet delen. Maar dat betekent niet dat alles kan.
+      Bijdragen die anderen discrimineren of aanvallen, iemands identiteit onthullen of persoonlijke privégegevens bevatten, worden uit de roulatie gehaald.
+      Het doel is niet om onenigheid uit te sluiten, maar om voorwaarden te creëren waarin mensen kunnen blijven deelnemen.
+    fr: |
+      Le dialogue a besoin de place pour le désaccord, l’inconfort et des points de vue que nous ne partageons peut-être pas. Mais cela ne signifie pas que tout est permis.
+      Les contributions qui discriminent ou attaquent d’autres personnes, révèlent l’identité de quelqu’un ou contiennent des informations personnelles privées seront retirées de la circulation.
+      Le but n’est pas d’éliminer le désaccord, mais de maintenir des conditions dans lesquelles chacun peut continuer à participer.
+  
+  term_5_title:
+    en: Are comments moderated?
+    nl: Worden reacties gemodereerd?
+    fr: Les commentaires sont-ils modérés?
+  
+  term_5:
+    en: |
+      Yes, but not before they first appear. Participation begins from a position of trust: your comment is shown live once, while you are still in the room. It is then held for moderation before it can reappear in conversations over the course of the exhibition.
+      Moderation is not neutral and involves judgement. We use the ‘limits of speech’ described above to decide which comments can continue to circulate.
+    nl: |
+      Ja, maar niet voordat ze voor het eerst verschijnen. Deelname begint vanuit vertrouwen: je reactie wordt één keer live getoond, terwijl je nog in de ruimte bent. Daarna wordt ze ter moderatie apart gehouden voordat ze in de loop van de tentoonstelling opnieuw in gesprekken kan verschijnen.
+      Moderatie is niet neutraal en vraagt om een afweging. We gebruiken de hierboven beschreven ‘grenzen van wat je kunt zeggen’ om te bepalen welke reacties kunnen blijven circuleren.
+    fr: |
+      Oui, mais pas avant leur première apparition. La participation repose d’abord op la confiance : votre commentaire est affiché une fois en direct, pendant que vous êtes encore dans la salle. Il est ensuite mis de côté pour être modéré avant de pouvoir réapparaître dans les conversations au cours de l’exposition.
+      La modération n’est pas neutre et implique un jugement. Nous nous appuyons sur les « limites de ce que l’on peut dire » décrites ci-dessus pour décider quels commentaires peuvent continuer à circuler.
+  
+  term_6_title:
+    en: Can I remove someone else’s comment?
+    nl: Kan ik de reactie van iemand anders verwijderen?
+    fr: Puis-je supprimer le commentaire de quelqu’un d’autre?
+  
+  term_6:
+    en: |
+      You can flag a comment that you believe crosses the limits of participation. It will then be taken out of rotation for review.
+      If you simply disagree with a comment, consider responding to it instead. Disagreement is part of the conversation.
+    nl: |
+      Je kunt een reactie melden als je denkt dat die de grenzen van deelname overschrijdt. De reactie wordt dan uit de roulatie gehaald om te worden beoordeeld.
+      Ben je het gewoon niet eens met een reactie, overweeg dan om erop te reageren. Meningsverschil hoort bij het gesprek.
+    fr: |
+      Vous pouvez signaler un commentaire si vous pensez qu’il dépasse les limites de la participation. Il sera alors retiré de la circulation afin d’être examiné.
+      Si vous êtes simplement en désaccord avec un commentaire, envisagez plutôt d’y répondre. Le désaccord fait partie de la conversation.
+  
+  term_7_title:
+    en: Can I withdraw my own comment?
+    nl: Kan ik mijn eigen reactie intrekken?
+    fr: Puis-je retirer mon propre commentaire?
+  
+  term_7:
+    en: |
+      Yes, although finding it may not always be easy. We only receive the comment itself, with no identifying information, so we have no way of knowing which comment belongs to you.
+      If you want to withdraw a comment, we will do our best to find it and take it out of rotation. It helps if you remember exactly what you wrote. Send your request to: jon.stam@luca-arts.be
+    nl: |
+      Ja, al is het misschien niet altijd gemakkelijk om die terug te vinden. We ontvangen alleen de reactie zelf, zonder identificerende informatie, en kunnen dus niet weten welke reactie van jou is.
+      Wil je een reactie intrekken, dan doen we ons best om die terug te vinden en uit de roulatie te halen. Het helpt als je nog precies weet wat je hebt geschreven. Stuur je verzoek naar: jon.stam@luca-arts.be
+    fr: |
+      Oui, même s’il n’est pas toujours facile de le retrouver. Nous recevons uniquement le commentaire lui-même, sans aucune information permettant de vous identifier. Nous ne pouvons donc pas savoir quel commentaire est le vôtre.
+      Si vous souhaitez retirer un commentaire, nous ferons de notre mieux pour le retrouver et le retirer de la circulation. Il est utile de vous souvenir exactement de ce que vous avez écrit. Envoyez votre demande à : jon.stam@luca-arts.be
+  
+  term_8_title:
+    en: Can I see the history of a conversation?
+    nl: Kan ik de geschiedenis van een gesprek bekijken?
+    fr: Puis-je voir l’historique d’une conversation?
+  
+  term_8:
+    en: |
+      No. And that’s part of the design. C2C invites you to overhear and join conversations rather than trace them back to their beginning. Comments are continually rearranged, allowing them to become part of different conversations over time.
+    nl: |
+      Nee. En dat is onderdeel van het ontwerp. C2C nodigt je uit om gesprekken op te vangen en eraan deel te nemen, in plaats van ze terug te volgen tot hun begin. Reacties worden voortdurend opnieuw gerangschikt, waardoor ze in de loop van de tijd onderdeel kunnen worden van verschillende gesprekken.
+    fr: |
+      Non. Et cela fait partie du concept. C2C vous invite à surprendre des conversations et à y participer, plutôt qu’à remonter jusqu’à leur début. Les commentaires sont continuellement réorganisés et peuvent ainsi faire partie de différentes conversations au fil du temps.
+  
+  term_9_title:
+    en: Aren’t these comments taken out of context?
+    nl: Worden deze reacties niet uit hun context gehaald?
+    fr: Ces commentaires ne sont-ils pas sortis de leur contexte?
+  
+  term_9:
+    en: |
+      In a way, yes. C2C takes comments from the context in which they were written and brings them into new conversations with what others have said. A comment may therefore be read differently each time it reappears.
+      Rather than keeping each comment in a single context, C2C allows new contexts to form around what people have said. The same comment can become part of different conversations, opening up connections and exchanges that might otherwise never happen.
+    nl: |
+      In zekere zin wel. C2C haalt reacties uit de context waarin ze zijn geschreven en brengt ze in nieuwe gesprekken met wat anderen hebben gezegd. Een reactie kan daardoor elke keer dat ze opnieuw verschijnt anders worden gelezen.
+      In plaats van elke reactie binnen één context te houden, laat C2C nieuwe contexten ontstaan rond wat mensen hebben gezegd. Dezelfde reactie kan onderdeel worden van verschillende gesprekken, waardoor verbanden en uitwisselingen mogelijk worden die anders misschien nooit zouden ontstaan.
+    fr: |
+      D’une certaine manière, oui. C2C sort les commentaires du contexte dans lequel ils ont été écrits et les fait entrer dans de nouvelles conversations avec ce que d’autres personnes ont dit. Un commentaire peut donc être lu différemment chaque fois qu’il réapparaît.
+      Plutôt que de maintenir chaque commentaire dans un seul contexte, C2C permet à de nouveaux contextes de se former autour de ce que les gens ont dit. Un même commentaire peut ainsi faire partie de différentes conversations et ouvrir des liens et des échanges qui, autrement, n’auraient peut-être jamais eu lieu.
+  
+  term_10_title:
+    en: Isn’t 200 characters ridiculously short?
+    nl: Is 200 tekens niet belachelijk kort?
+    fr: 200 caractères, ce n’est pas ridiculement court?
+  
+  term_10:
+    en: |
+      Yes, it is short. Deliberately so. C2C does not ask you to make a complete argument in a single comment. The limit encourages shorter contributions that leave room for others to question, disagree, or continue the thought.
+      Brevity has its limits. But limits can also invite creativity.
+    nl: |
+      Ja, het is kort. Bewust. C2C vraagt je niet om in één reactie een volledig argument te formuleren. De limiet stimuleert kortere bijdragen die ruimte laten voor anderen om vragen te stellen, het oneens te zijn of de gedachte voort te zetten.
+      Kort zijn heeft zijn beperkingen. Maar beperkingen kunnen ook creativiteit uitlokken.
+    fr: |
+      Oui, c’est court. Et c’est volontaire. C2C ne vous demande pas de développer un argument complet dans un seul commentaire. Cette limite encourage des contributions plus courtes, qui laissent aux autres la possibilité de poser des questions, d’être en désaccord ou de poursuivre la réflexion.
+      La brièveté a ses limites. Mais les limites peuvent aussi stimuler la créativité.
+  
+  term_11_title:
+    en: What happens to my data?
+    nl: Wat gebeurt er met mijn gegevens?
+    fr: Qu’advient-il de mes données?
+  
+  term_11:
+    en: |
+      Your comment becomes part of C2C and may be displayed, connected with other comments, and encountered by future visitors at Design Museum Gent. All comments are stored and processed locally.
+      C2C is an artistic installation. It is also part of doctoral research in the Arts at LUCA School of Arts / KU Leuven on experimental interfaces for museum participation. Anonymous comments and analysis of the comments as a whole may also appear in presentations, publications, or other outcomes of this research.
+      If you have questions about your comment, your data, or the research, you can contact us at: jon.stam@luca-arts.be
+    nl: |
+      Je reactie wordt onderdeel van C2C en kan worden getoond, met andere reacties worden verbonden en door toekomstige bezoekers van Design Museum Gent worden tegengekomen. Alle reacties worden lokaal opgeslagen en verwerkt.
+      C2C is een artistieke installatie. Het maakt ook deel uit van doctoraatsonderzoek in de kunsten aan LUCA School of Arts / KU Leuven naar experimentele interfaces voor participatie in musea. Anonieme reacties en analyses van de reacties als geheel kunnen ook worden opgenomen in presentaties, publicaties of andere resultaten van dit onderzoek.
+      Heb je vragen over je reactie, je gegevens of het onderzoek? Neem dan contact met ons op via: jon.stam@luca-arts.be
+    fr: |
+      Votre commentaire fait partie de C2C et peut être affiché, mis en relation avec d’autres commentaires et découvert par de futurs visiteurs du Design Museum Gent. Tous les commentaires sont stockés et traités localement.
+      C2C est une installation artistique. Le projet fait également partie d’une recherche doctorale en arts à LUCA School of Arts / KU Leuven sur des interfaces expérimentales pour la participation dans les musées. Les commentaires anonymes et des analyses de l’ensemble des commentaires peuvent également apparaître dans des présentations, des publications ou d’autres résultats de cette recherche.
+      Si vous avez des questions concernant votre commentaire, vos données ou la recherche, vous pouvez nous contacter à : jon.stam@luca-arts.be
 
 
 error:
