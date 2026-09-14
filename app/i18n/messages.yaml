@@ -51,6 +51,10 @@ main:
 
 
 new_comment:
+  comment_text: 
+      en: Type you response here
+      nl: Type you response here
+      fr: Type you response here
   topics:
     belgian_democracy:
       en: Belgian democracy
