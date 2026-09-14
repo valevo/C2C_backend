@@ -148,6 +148,7 @@ aboutpage:
       Les commentaires des visiteurs sont souvent recueillis, mais rarement mis en relation. Comment to Conversation explore ce qui se passe lorsqu’on les relie : vous pouvez découvrir ce que d’autres ont dit, leur répondre et permettre aux conversations de se développer au fil du temps.
       C2C part de l’idée du dialogue : il ne s’agit pas simplement de parler, mais d’un processus où parler nous invite à écouter, et où écouter ouvre la possibilité de répondre.
       Les conversations que vous découvrez ne suivent pas un scénario prédéfini. C2C réorganise continuellement les commentaires existants pour faire apparaître différents liens entre eux. Les conversations prennent forme à travers les personnes qui participent, l’exposition à laquelle elles réagissent et l’espace qu’elles partagent. Certaines peuvent faire écho, interpeller ou surprendre — d’autres ne mèneront nulle part, comme cela arrive parfois dans une conversation.
+  
   how_it_works:
     en: How it Works
     nl: Hoe het werkt 
@@ -159,10 +160,46 @@ aboutpage:
   connections:
     en: C2C uses computational methods to analyze possible relationships between existing visitor comments.
     nl: C2C gebruikt computationele methoden om mogelijke verbanden tussen bestaande bezoekersreacties te analyseren.
-    fr: C2C utilise des méthodes computationnelles pour analyser les liens possibles entre les commentaires existants des visiteurs.
+    fr: C2C utilise des méthodes computationnelles pour analyser les liens possibles entre les commentaires existants des visiteurs.  
   image_1:
+    en: Finding references
+    nl: Referenties zoeken
+    fr: Rechercher des références  
+  image_2:
+    en: Making connections
+    nl: Verbanden leggen
+    fr: Créer des liens
     
-  error:
+  connections_to_conversations:
+    en: From Connections to Conversations
+    nl: Van verbanden naar gesprekken
+    fr: Des connexions aux conversations
+  conversations:
+    en: C2C uses computational methods to analyze possible relationships between existing visitor comments.
+    nl: C2C brengt reacties samen in steeds veranderende gesprekslijnen en creëert zo mogelijkheden voor ontmoeting en reactie.
+    fr: C2C utilise des méthodes computationnelles pour analyser les liens possibles entre les commentaires existants des visiteurs.
+  image_3:
+    en: Following possible paths
+    nl: Mogelijke paden volgen
+    fr: Suivre des pistes possibles
+  image_3:
+    en: Forming conversational threads
+    nl: Gesprekslijnen vormen
+    fr: Former des fils de conversation
+  bubbles:
+    en: Rather than maximizing attention or reinforcing social bubbles, C2C repurposes social media algorithms towards curiosity, difference, and exchange within a shared civic space.
+    nl: In plaats van aandacht te maximaliseren of sociale bubbels te versterken, zet C2C algoritmes uit sociale media in voor nieuwsgierigheid, verschil en uitwisseling binnen een gedeelde publieke ruimte.
+    fr: Plutôt que de maximiser l’attention ou de renforcer les bulles sociales, C2C réutilise les algorithmes des réseaux sociaux pour favoriser la curiosité, la différence et l’échange au sein d’un espace public partagé.
+  credits:
+    en: C2C is developed by interaction design researcher Jon Stam and data scientist Valentin Vogelmann. The project is part of Jon Stam’s doctoral research at LUCA School of Arts and KU Leuven, which explores participatory mediation tools in museum spaces. Contact: jon.stam@luca-arts.be
+        The project is made possible with the support of the Nationale Loterij Fonds voor Democratie, managed by the King Baudouin Foundation.
+    nl: C2C is ontwikkeld door interactieontwerper en onderzoeker Jon Stam en datawetenschapper Valentin Vogelmann. Het project maakt deel uit van het doctoraatsonderzoek van Jon Stam aan LUCA School of Arts en KU Leuven naar participatieve bemiddeling in museale ruimtes. Contact: jon.stam@luca-arts.be
+        Het project is mogelijk gemaakt met steun van het Nationale Loterij Fonds voor Democratie, beheerd door de Koning Boudewijnstichting.
+    fr: C2C est développé par Jon Stam, chercheur et designer d’interaction, et Valentin Vogelmann, data scientist. Le projet fait partie de la recherche doctorale de Jon Stam à LUCA School of Arts et KU Leuven, consacrée aux outils de médiation participative dans les espaces muséaux. Contact : jon.stam@luca-arts.be
+        Le projet est rendu possible grâce au soutien du Nationale Loterij Fonds voor Democratie, géré par la Fondation Roi Baudouin.
+
+
+error:
   invalid_message:
     en: The message could not be understood.
     nl: Het bericht kon niet worden verwerkt.
