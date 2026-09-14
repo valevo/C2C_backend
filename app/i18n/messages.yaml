@@ -61,10 +61,14 @@ main:
 
 
 new_comment:
-  comment_text: 
-      en: Type you response here
-      nl: Type you response here
-      fr: Type you response here
+  comment_response: 
+      en: Add you response
+      nl: Voeg je reactie toe
+      fr: Ajoutez votre réponse
+  comment_newconvo: 
+      en: Add your comment
+      nl: Voeg je opmerking toe
+      fr: Ajoutez votre commentaire
   topics:
     belgian_democracy:
       en: Belgian democracy
@@ -123,7 +127,42 @@ flag:
     nl: Deze opmerking zou niet openbaar mogen zijn
     fr: Ce commentaire ne devrait pas être public
 
-error:
+aboutpage:
+  header:
+    en: what is C2C?
+    nl: wat is C2C?
+    fr: qu'est-ce que C2C ?
+  about:
+    en: |
+      Museum exhibitions often speak of “starting a conversation.” But who gets to take part—and how does that conversation continue?
+      Visitor comments are often collected, but rarely connected. Comment to Conversation explores what happens when they are—creating opportunities for you to encounter and respond to what others have said, and for conversations to unfold over time.
+      C2C starts from the idea of dialogue: not simply as speaking, but as a process in which speaking asks us to listen, and listening opens the possibility to respond.
+      The conversations you encounter are not a fixed script. C2C continually rearranges existing comments to bring different connections into view. They take shape through the people who participate, the exhibition they are responding to, and the space they share. Some will resonate, challenge, or surprise—others will lead nowhere, as conversations sometimes do.
+    nl:  |
+      Museumtentoonstellingen spreken vaak over ‘een gesprek op gang brengen’. Maar wie kan eraan deelnemen — en hoe gaat dat gesprek verder?
+      Reacties van bezoekers worden vaak verzameld, maar zelden met elkaar verbonden. Comment to Conversation onderzoekt wat er gebeurt als dat wel gebeurt — door mogelijkheden te creëren om kennis te nemen van wat anderen hebben gezegd, daarop te reageren en gesprekken zich in de loop van de tijd te laten ontvouwen.
+      C2C vertrekt vanuit het idee van dialoog: niet simpelweg als spreken, maar als een proces waarin spreken van ons vraagt om te luisteren, en luisteren de mogelijkheid opent om te reageren.
+      De gesprekken die je tegenkomt, volgen geen vast script. C2C herschikt bestaande reacties voortdurend om om verschillende verbanden zichtbaar te maken. Ze krijgen vorm door de mensen die deelnemen, de tentoonstelling waarop ze reageren en de ruimte die ze delen. Sommige zullen herkenning oproepen, uitdagen of verrassen — andere leiden misschien nergens toe, zoals dat soms ook met gesprekken gaat.
+    fr:  |
+      Les expositions parlent souvent de « lancer une conversation ». Mais qui peut y participer — et comment cette conversation peut-elle se poursuivre ?
+      Les commentaires des visiteurs sont souvent recueillis, mais rarement mis en relation. Comment to Conversation explore ce qui se passe lorsqu’on les relie : vous pouvez découvrir ce que d’autres ont dit, leur répondre et permettre aux conversations de se développer au fil du temps.
+      C2C part de l’idée du dialogue : il ne s’agit pas simplement de parler, mais d’un processus où parler nous invite à écouter, et où écouter ouvre la possibilité de répondre.
+      Les conversations que vous découvrez ne suivent pas un scénario prédéfini. C2C réorganise continuellement les commentaires existants pour faire apparaître différents liens entre eux. Les conversations prennent forme à travers les personnes qui participent, l’exposition à laquelle elles réagissent et l’espace qu’elles partagent. Certaines peuvent faire écho, interpeller ou surprendre — d’autres ne mèneront nulle part, comme cela arrive parfois dans une conversation.
+  how_it_works:
+    en: How it Works
+    nl: Hoe het werkt 
+    fr: Comment ça marche
+  comment_to_connections:
+    en: From Comments to Connections
+    nl: Van reacties naar verbanden
+    fr: Des commentaires aux connexions
+  connections:
+    en: C2C uses computational methods to analyze possible relationships between existing visitor comments.
+    nl: C2C gebruikt computationele methoden om mogelijke verbanden tussen bestaande bezoekersreacties te analyseren.
+    fr: C2C utilise des méthodes computationnelles pour analyser les liens possibles entre les commentaires existants des visiteurs.
+  image_1:
+    
+  error:
   invalid_message:
     en: The message could not be understood.
     nl: Het bericht kon niet worden verwerkt.
