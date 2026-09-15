@@ -45,14 +45,22 @@ main:
     en: Flag this comment
     nl: Meld deze reactie
     fr: Signaler ce commentaire
+  live_banner:
+    en: Someone here added to the conversation
+    nl: Iemand hier heeft iets toegevoegd aan het gesprek
+    fr: Quelqu’un ici a ajouté à la conversation
+  back:
+    en: Back
+    nl: Terug
+    fr: Retour
 
 
 new_comment:
-  comment_response: 
+  comment_response:
       en: Add you response
       nl: Voeg je reactie toe
       fr: Ajoutez votre réponse
-  comment_newconvo: 
+  comment_newconvo:
       en: Add your comment
       nl: Voeg je opmerking toe
       fr: Ajoutez votre commentaire
@@ -113,6 +121,10 @@ flag:
     en: This comment should not be public
     nl: Deze opmerking zou niet openbaar mogen zijn
     fr: Ce commentaire ne devrait pas être public
+  result:
+    en: This comment has been removed from the conversation.
+    nl: Deze opmerking is uit de conversatie verwijderd.
+    fr: Ce commentaire a été retiré de la conversation.
 
 aboutpage:
   header:
@@ -135,10 +147,10 @@ aboutpage:
       Les commentaires des visiteurs sont souvent recueillis, mais rarement mis en relation. Comment to Conversation explore ce qui se passe lorsqu’on les relie : vous pouvez découvrir ce que d’autres ont dit, leur répondre et permettre aux conversations de se développer au fil du temps.
       C2C part de l’idée du dialogue : il ne s’agit pas simplement de parler, mais d’un processus où parler nous invite à écouter, et où écouter ouvre la possibilité de répondre.
       Les conversations que vous découvrez ne suivent pas un scénario prédéfini. C2C réorganise continuellement les commentaires existants pour faire apparaître différents liens entre eux. Les conversations prennent forme à travers les personnes qui participent, l’exposition à laquelle elles réagissent et l’espace qu’elles partagent. Certaines peuvent faire écho, interpeller ou surprendre — d’autres ne mèneront nulle part, comme cela arrive parfois dans une conversation.
-  
+
   how_it_works:
     en: How it Works
-    nl: Hoe het werkt 
+    nl: Hoe het werkt
     fr: Comment ça marche
   comment_to_connections:
     en: From Comments to Connections
@@ -147,16 +159,16 @@ aboutpage:
   connections:
     en: C2C uses computational methods to analyze possible relationships between existing visitor comments.
     nl: C2C gebruikt computationele methoden om mogelijke verbanden tussen bestaande bezoekersreacties te analyseren.
-    fr: C2C utilise des méthodes computationnelles pour analyser les liens possibles entre les commentaires existants des visiteurs.  
+    fr: C2C utilise des méthodes computationnelles pour analyser les liens possibles entre les commentaires existants des visiteurs.
   image_1:
     en: Finding references
     nl: Referenties zoeken
-    fr: Rechercher des références  
+    fr: Rechercher des références
   image_2:
     en: Making connections
     nl: Verbanden leggen
     fr: Créer des liens
-    
+
   connections_to_conversations:
     en: From Connections to Conversations
     nl: Van verbanden naar gesprekken
@@ -192,12 +204,12 @@ terms:
     en: Terms
     nl: Spelregels
     fr: Conditions
-  
+
   term_1_title:
     en: How do I join a conversation?
     nl: Hoe neem ik deel aan een gesprek?
     fr: Comment participer à une conversation?
-  
+
   term_1:
     en: |
       To join a conversation, tap a comment you want to respond to, write your response, confirm that it can be made public, and tap submit.
@@ -211,12 +223,12 @@ terms:
       Pour participer à une conversation, touchez un commentaire auquel vous souhaitez répondre, écrivez votre réponse, confirmez qu’elle peut être rendue publique, puis appuyez sur envoyer.
       Votre réponse interrompt la conversation en cours et rejoint l’échange public. C2C y associe ensuite des commentaires d’autres personnes en fonction des liens avec ce qui a été dit.
       Imaginez un panneau où sont affichées les réactions laissées par les personnes passées dans cette salle, sauf que les notes sont continuellement réorganisées pour faire apparaître différents liens entre elles.
-  
+
   term_2_title:
     en: Why engage in a conversation?
     nl: Waarom deelnemen aan een gesprek?
     fr: Pourquoi participer à une conversation?
-  
+
   term_2:
     en: |
       You don’t have to. Museum exhibitions take shape through many conversations, and we believe there is an ethical responsibility to make room for the people who visit them to join in.
@@ -230,12 +242,12 @@ terms:
       Vous n’êtes pas obligé de participer. Les expositions prennent forme à travers de nombreuses conversations, et nous pensons qu’il existe une responsabilité éthique : faire une place aux personnes qui les visitent pour qu’elles puissent y prendre part.
       Une conversation offre aussi quelque chose que la simple expression d’une opinion ne permet pas : rencontrer un autre point de vue, y répondre et peut-être voir le sien autrement.
       C2C crée un espace pour cette possibilité, sans supposer que chaque échange sera pertinent ou mènera quelque part. Si vous préférez échanger directement avec d’autres visiteurs en dehors de C2C, tant mieux.
-  
+
   term_3_title:
     en: Who is responsible for the conversation?
     nl: Wie is verantwoordelijk voor het gesprek?
     fr: Qui est responsable de la conversation?
-  
+
   term_3:
     en: |
       Responsibility is shared. You are responsible for what you contribute, C2C shapes which comments are brought together, and the museum sets the conditions in which this happens.
@@ -246,12 +258,12 @@ terms:
     fr: |
       La responsabilité est partagée. Vous êtes responsable de ce que vous apportez, C2C détermine quels commentaires sont mis en relation, et le musée définit les conditions dans lesquelles cela se passe.
       Nous considérons cela comme une « response-ability » partagée : la possibilité non seulement de parler, mais aussi d’écouter et de rester ouvert à une réponse.
-  
+
   term_4_title:
     en: What are the limits of speech?
     nl: Waar liggen de grenzen van wat je kunt zeggen?
     fr: Quelles sont les limites de ce que l’on peut dire?
-  
+
   term_4:
     en: |
       Dialogue needs room for disagreement, discomfort, and views we may not share. But that does not mean anything goes.
@@ -265,12 +277,12 @@ terms:
       Le dialogue a besoin de place pour le désaccord, l’inconfort et des points de vue que nous ne partageons peut-être pas. Mais cela ne signifie pas que tout est permis.
       Les contributions qui discriminent ou attaquent d’autres personnes, révèlent l’identité de quelqu’un ou contiennent des informations personnelles privées seront retirées de la circulation.
       Le but n’est pas d’éliminer le désaccord, mais de maintenir des conditions dans lesquelles chacun peut continuer à participer.
-  
+
   term_5_title:
     en: Are comments moderated?
     nl: Worden reacties gemodereerd?
     fr: Les commentaires sont-ils modérés?
-  
+
   term_5:
     en: |
       Yes, but not before they first appear. Participation begins from a position of trust: your comment is shown live once, while you are still in the room. It is then held for moderation before it can reappear in conversations over the course of the exhibition.
@@ -281,12 +293,12 @@ terms:
     fr: |
       Oui, mais pas avant leur première apparition. La participation repose d’abord op la confiance : votre commentaire est affiché une fois en direct, pendant que vous êtes encore dans la salle. Il est ensuite mis de côté pour être modéré avant de pouvoir réapparaître dans les conversations au cours de l’exposition.
       La modération n’est pas neutre et implique un jugement. Nous nous appuyons sur les « limites de ce que l’on peut dire » décrites ci-dessus pour décider quels commentaires peuvent continuer à circuler.
-  
+
   term_6_title:
     en: Can I remove someone else’s comment?
     nl: Kan ik de reactie van iemand anders verwijderen?
     fr: Puis-je supprimer le commentaire de quelqu’un d’autre?
-  
+
   term_6:
     en: |
       You can flag a comment that you believe crosses the limits of participation. It will then be taken out of rotation for review.
@@ -297,12 +309,12 @@ terms:
     fr: |
       Vous pouvez signaler un commentaire si vous pensez qu’il dépasse les limites de la participation. Il sera alors retiré de la circulation afin d’être examiné.
       Si vous êtes simplement en désaccord avec un commentaire, envisagez plutôt d’y répondre. Le désaccord fait partie de la conversation.
-  
+
   term_7_title:
     en: Can I withdraw my own comment?
     nl: Kan ik mijn eigen reactie intrekken?
     fr: Puis-je retirer mon propre commentaire?
-  
+
   term_7:
     en: |
       Yes, although finding it may not always be easy. We only receive the comment itself, with no identifying information, so we have no way of knowing which comment belongs to you.
@@ -313,12 +325,12 @@ terms:
     fr: |
       Oui, même s’il n’est pas toujours facile de le retrouver. Nous recevons uniquement le commentaire lui-même, sans aucune information permettant de vous identifier. Nous ne pouvons donc pas savoir quel commentaire est le vôtre.
       Si vous souhaitez retirer un commentaire, nous ferons de notre mieux pour le retrouver et le retirer de la circulation. Il est utile de vous souvenir exactement de ce que vous avez écrit. Envoyez votre demande à : jon.stam@luca-arts.be
-  
+
   term_8_title:
     en: Can I see the history of a conversation?
     nl: Kan ik de geschiedenis van een gesprek bekijken?
     fr: Puis-je voir l’historique d’une conversation?
-  
+
   term_8:
     en: |
       No. And that’s part of the design. C2C invites you to overhear and join conversations rather than trace them back to their beginning. Comments are continually rearranged, allowing them to become part of different conversations over time.
@@ -326,12 +338,12 @@ terms:
       Nee. En dat is onderdeel van het ontwerp. C2C nodigt je uit om gesprekken op te vangen en eraan deel te nemen, in plaats van ze terug te volgen tot hun begin. Reacties worden voortdurend opnieuw gerangschikt, waardoor ze in de loop van de tijd onderdeel kunnen worden van verschillende gesprekken.
     fr: |
       Non. Et cela fait partie du concept. C2C vous invite à surprendre des conversations et à y participer, plutôt qu’à remonter jusqu’à leur début. Les commentaires sont continuellement réorganisés et peuvent ainsi faire partie de différentes conversations au fil du temps.
-  
+
   term_9_title:
     en: Aren’t these comments taken out of context?
     nl: Worden deze reacties niet uit hun context gehaald?
     fr: Ces commentaires ne sont-ils pas sortis de leur contexte?
-  
+
   term_9:
     en: |
       In a way, yes. C2C takes comments from the context in which they were written and brings them into new conversations with what others have said. A comment may therefore be read differently each time it reappears.
@@ -342,12 +354,12 @@ terms:
     fr: |
       D’une certaine manière, oui. C2C sort les commentaires du contexte dans lequel ils ont été écrits et les fait entrer dans de nouvelles conversations avec ce que d’autres personnes ont dit. Un commentaire peut donc être lu différemment chaque fois qu’il réapparaît.
       Plutôt que de maintenir chaque commentaire dans un seul contexte, C2C permet à de nouveaux contextes de se former autour de ce que les gens ont dit. Un même commentaire peut ainsi faire partie de différentes conversations et ouvrir des liens et des échanges qui, autrement, n’auraient peut-être jamais eu lieu.
-  
+
   term_10_title:
     en: Isn’t 200 characters ridiculously short?
     nl: Is 200 tekens niet belachelijk kort?
     fr: 200 caractères, ce n’est pas ridiculement court?
-  
+
   term_10:
     en: |
       Yes, it is short. Deliberately so. C2C does not ask you to make a complete argument in a single comment. The limit encourages shorter contributions that leave room for others to question, disagree, or continue the thought.
@@ -358,12 +370,12 @@ terms:
     fr: |
       Oui, c’est court. Et c’est volontaire. C2C ne vous demande pas de développer un argument complet dans un seul commentaire. Cette limite encourage des contributions plus courtes, qui laissent aux autres la possibilité de poser des questions, d’être en désaccord ou de poursuivre la réflexion.
       La brièveté a ses limites. Mais les limites peuvent aussi stimuler la créativité.
-  
+
   term_11_title:
     en: What happens to my data?
     nl: Wat gebeurt er met mijn gegevens?
     fr: Qu’advient-il de mes données?
-  
+
   term_11:
     en: |
       Your comment becomes part of C2C and may be displayed, connected with other comments, and encountered by future visitors at Design Museum Gent. All comments are stored and processed locally.
@@ -388,3 +400,63 @@ error:
     en: This comment does not exist.
     nl: Deze reactie bestaat niet.
     fr: Ce commentaire n'existe pas.
+  connection_lost:
+    en: Connection to the conversation lost…
+    nl: Verbinding met de conversatie verbroken…
+    fr: Connexion à la conversation perdue…
+  no_connection:
+    en: No connection. Please try again in a moment.
+    nl: Geen verbinding. Probeer het zo opnieuw.
+    fr: Pas de connexion. Réessayez dans un instant.
+
+
+# for the screen readers only
+a11y:
+  hint_reply:
+    en: Choose a comment above to join the conversation.
+    nl: Kies hierboven een opmerking om deel te nemen aan het gesprek.
+    fr: Choisissez un commentaire ci-dessus pour rejoindre la conversation.
+  new:
+    en: Start a new conversation
+    nl: Een nieuw gesprek starten
+    fr: Démarrer une nouvelle conversation
+  stage:
+    en: Ongoing conversation
+    nl: Lopend gesprek
+    fr: Conversation en cours
+  reply:
+    en: Reply to this comment
+    nl: Reageer op deze opmerking
+    fr: Répondre à ce commentaire
+  flagged:
+    en: Reported comment, made unreadable
+    nl: Gemelde opmerking, onleesbaar gemaakt
+    fr: Commentaire signalé, rendu illisible
+  close:
+    en: Close
+    nl: Sluiten
+    fr: Fermer
+  topics:
+    en: Topics, optional
+    nl: Onderwerpen, optioneel
+    fr: Thèmes, facultatif
+  language:
+    en: Choose language
+    nl: Taal kiezen
+    fr: Choisir la langue
+  dialog_reply:
+    en: Replying to a comment
+    nl: Reageren op een opmerking
+    fr: Répondre à un commentaire
+  dialog_new:
+    en: Starting a new conversation
+    nl: Een nieuw gesprek starten
+    fr: Démarrer une nouvelle conversation
+  dialog_flag:
+    en: Reporting a comment
+    nl: Een opmerking melden
+    fr: Signaler un commentaire
+  dialog_thanks:
+    en: Confirmation
+    nl: Bevestiging
+    fr: Confirmation
