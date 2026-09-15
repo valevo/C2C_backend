@@ -38,8 +38,8 @@ class Flag(FlagCreate):
 class CommentCreate(BaseModel):
     """Create model for a Comment that isn't a reply, i.e. added via 'I want to say something else'"""
     text: CommentText
-    reply_to: ReplyTo | None
-    topics: tuple[Topic, ...] | None
+    reply_to: ReplyTo = None
+    topics: tuple[Topic, ...] | None = None
 
     @model_validator(mode="after")
     def check_exactly_one(self) -> "CommentCreate":
