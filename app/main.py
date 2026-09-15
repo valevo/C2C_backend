@@ -8,6 +8,7 @@ import random
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 from app.db import seed_DB
@@ -48,6 +49,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Comment2Conversation", version="0.1", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/db")
