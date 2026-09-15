@@ -15,7 +15,7 @@ class StatementRender(BaseModel):
 
 class CommentRender(StatementRender):
     slot: Slot
-    is_flagged: bool  # flagged comments are blurred to be illegible
+    is_flagged: bool  # flagged comments may be blurred to be illegible
 
     @classmethod
     def from_Comment(cls, comment: Comment, slot: Slot):

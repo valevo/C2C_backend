@@ -4,10 +4,10 @@ from app.models import Comment, ConversationStarter, Statement
 
 
 def seed_DB() -> dict[int, Statement]:
-    starter = ConversationStarter(text="i think", topics=["what_is_democracy"])
+    starter = ConversationStarter(text="i think", topics=("what_is_democracy",))
     init_comments = [
         starter,
-        Comment(text="hi", reply_to=starter.ID),
-        Comment(text="bye"),
+        Comment(text="hi", reply_to=starter.ID, topics=starter.topics),
+        Comment(text="bye", reply_to=None, topics=("protest",)),
     ]
     return {c.ID: c for c in init_comments}

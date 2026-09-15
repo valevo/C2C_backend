@@ -178,12 +178,15 @@ aboutpage:
     nl: In plaats van aandacht te maximaliseren of sociale bubbels te versterken, zet C2C algoritmes uit sociale media in voor nieuwsgierigheid, verschil en uitwisseling binnen een gedeelde publieke ruimte.
     fr: Plutôt que de maximiser l’attention ou de renforcer les bulles sociales, C2C réutilise les algorithmes des réseaux sociaux pour favoriser la curiosité, la différence et l’échange au sein d’un espace public partagé.
   credits:
-    en: C2C is developed by interaction design researcher Jon Stam and data scientist Valentin Vogelmann. The project is part of Jon Stam’s doctoral research at LUCA School of Arts and KU Leuven, which explores participatory mediation tools in museum spaces. Contact: jon.stam@luca-arts.be
-        The project is made possible with the support of the Nationale Loterij Fonds voor Democratie, managed by the King Baudouin Foundation.
-    nl: C2C is ontwikkeld door interactieontwerper en onderzoeker Jon Stam en datawetenschapper Valentin Vogelmann. Het project maakt deel uit van het doctoraatsonderzoek van Jon Stam aan LUCA School of Arts en KU Leuven naar participatieve bemiddeling in museale ruimtes. Contact: jon.stam@luca-arts.be
-        Het project is mogelijk gemaakt met steun van het Nationale Loterij Fonds voor Democratie, beheerd door de Koning Boudewijnstichting.
-    fr: C2C est développé par Jon Stam, chercheur et designer d’interaction, et Valentin Vogelmann, data scientist. Le projet fait partie de la recherche doctorale de Jon Stam à LUCA School of Arts et KU Leuven, consacrée aux outils de médiation participative dans les espaces muséaux. Contact : jon.stam@luca-arts.be
-        Le projet est rendu possible grâce au soutien du Nationale Loterij Fonds voor Democratie, géré par la Fondation Roi Baudouin.
+    en: |-
+      C2C is developed by interaction design researcher Jon Stam and data scientist Valentin Vogelmann. The project is part of Jon Stam’s doctoral research at LUCA School of Arts and KU Leuven, which explores participatory mediation tools in museum spaces. Contact: jon.stam@luca-arts.be
+      The project is made possible with the support of the Nationale Loterij Fonds voor Democratie, managed by the King Baudouin Foundation.
+    nl: |-
+      C2C is ontwikkeld door interactieontwerper en onderzoeker Jon Stam en datawetenschapper Valentin Vogelmann. Het project maakt deel uit van het doctoraatsonderzoek van Jon Stam aan LUCA School of Arts en KU Leuven naar participatieve bemiddeling in museale ruimtes. Contact: jon.stam@luca-arts.be
+      Het project is mogelijk gemaakt met steun van het Nationale Loterij Fonds voor Democratie, beheerd door de Koning Boudewijnstichting.
+    fr: |-
+      C2C est développé par Jon Stam, chercheur et designer d’interaction, et Valentin Vogelmann, data scientist. Le projet fait partie de la recherche doctorale de Jon Stam à LUCA School of Arts et KU Leuven, consacrée aux outils de médiation participative dans les espaces muséaux. Contact : jon.stam@luca-arts.be
+      Le projet est rendu possible grâce au soutien du Nationale Loterij Fonds voor Democratie, géré par la Fondation Roi Baudouin.
 terms:
   terms_title:
     en: Terms
