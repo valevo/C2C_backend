@@ -95,6 +95,8 @@ components:
         $ref: '#/components/schemas/ConversationStarterRenderMessage'
   schemas:
     CommentCreate:
+      description: Create model for a Comment that isn't a reply, i.e. added via 'I want to say something
+        else'
       properties:
         text:
           description: Comment body, plain text
@@ -102,15 +104,26 @@ components:
           type: string
         reply_to:
           anyOf:
-          - type: integer
+          - anyOf:
+            - type: integer
+            - type: 'null'
+            description: The ID of the comment that this comment is a reply to. None (null) if it is not
+              a reply to any comment. The presence of this property distinguishes comments created by
+              clicking on an existing comment vs using the 'ik wil iets anders zeggen' button.
           - type: 'null'
-          default: null
-          description: The ID of the comment that this comment is a reply to. None (null) if it is not
-            a reply to any comment. The presence of this property distinguishes comments created by clicking
-            on an existing comment vs using the 'ik wil iets anders zeggen' button.
           title: Reply To
+        topics:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/Topic'
+              description: The name of a topic chosen for a comment.
+            type: array
+          - type: 'null'
+          title: Topics
       required:
       - text
+      - reply_to
+      - topics
       title: CommentCreate
       type: object
     CommentCreateMessage:
@@ -135,6 +148,13 @@ components:
           description: Comment body, plain text
           title: Text
           type: string
+        language:
+          enum:
+          - en
+          - nl
+          - fr
+          title: Language
+          type: string
         slot:
           description: Where to render the comment, either in the top field or the bottom field.
           enum:
@@ -148,6 +168,7 @@ components:
       required:
       - ID
       - text
+      - language
       - slot
       - is_flagged
       title: CommentRender
@@ -161,22 +182,23 @@ components:
           type: string
         payload:
           $ref: '#/components/schemas/CommentRender'
+        display_seconds:
+          title: Display Seconds
+          type: number
       required:
       - payload
+      - display_seconds
       title: CommentRenderMessage
       type: object
     ConversationStarterRender:
       properties:
-        ID:
-          title: Id
-          type: integer
-        text:
-          description: Comment body, plain text
-          title: Text
-          type: string
+        starter:
+          $ref: '#/components/schemas/ConversationStarterTextRender'
+        translation:
+          $ref: '#/components/schemas/ConversationStarterTextRender'
       required:
-      - ID
-      - text
+      - starter
+      - translation
       title: ConversationStarterRender
       type: object
     ConversationStarterRenderMessage:
@@ -188,9 +210,43 @@ components:
           type: string
         payload:
           $ref: '#/components/schemas/ConversationStarterRender'
+        display_seconds:
+          title: Display Seconds
+          type: number
       required:
       - payload
+      - display_seconds
       title: ConversationStarterRenderMessage
+      type: object
+    ConversationStarterTextRender:
+      properties:
+        ID:
+          title: Id
+          type: integer
+        text:
+          description: Comment body, plain text
+          title: Text
+          type: string
+        language:
+          enum:
+          - en
+          - nl
+          - fr
+          title: Language
+          type: string
+        slot:
+          description: Where to render the comment, either in the top field or the bottom field.
+          enum:
+          - top
+          - bottom
+          title: Slot
+          type: string
+      required:
+      - ID
+      - text
+      - language
+      - slot
+      title: ConversationStarterTextRender
       type: object
     FlagCreate:
       properties:
@@ -231,9 +287,25 @@ components:
           description: Comment body, plain text
           title: Text
           type: string
+        language:
+          enum:
+          - en
+          - nl
+          - fr
+          title: Language
+          type: string
+        slot:
+          description: Where to render the comment, either in the top field or the bottom field.
+          enum:
+          - top
+          - bottom
+          title: Slot
+          type: string
       required:
       - ID
       - text
+      - language
+      - slot
       title: NewCommentRender
       type: object
     NewCommentRenderMessage:
@@ -245,7 +317,23 @@ components:
           type: string
         payload:
           $ref: '#/components/schemas/NewCommentRender'
+        display_seconds:
+          title: Display Seconds
+          type: number
       required:
       - payload
+      - display_seconds
       title: NewCommentRenderMessage
       type: object
+    Topic:
+      enum:
+      - belgian_democracy
+      - exclusion_disillusion
+      - what_is_democracy
+      - everyday_democracy
+      - direct_democracy
+      - museums_democracy
+      - ecocracy
+      - protest
+      title: Topic
+      type: string

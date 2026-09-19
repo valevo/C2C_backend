@@ -20,7 +20,7 @@ welcome:
     fr: Du Commentaire à la Conversation ne génère aucun nouveau contenu. Il se contente d’enregistrer des commentaires et de les réorganiser en conversations en perpétuelle évolution.
   agree:
     en: Ok
-    nl: Oke
+    nl: Oké
     fr: D'accord
 
 
@@ -28,7 +28,7 @@ main:
   about:
     en: what is C2C?
     nl: wat is C2C?
-    fr: qu'est-ce que C2C ?
+    fr: qu'est-ce que C2C?
   rules:
     en: terms
     nl: spelregels
@@ -68,31 +68,31 @@ new_comment:
     belgian_democracy:
       en: Belgian democracy
       nl: Belgische democratie
-      fr: Democratie belge
+      fr: Démocratie belge
     exclusion_disillusion:
       en: Exclusion and disillusion
       nl: Uitsluiting en desillusie
-      fr: Exclusion et desillusion
+      fr: Exclusion et désillusion
     what_is_democracy:
       en: What is democracy?
       nl: Wat is democratie?
-      fr: Qu'est-ce que la democratie?
+      fr: Qu'est-ce que la démocratie ?
     everyday_democracy:
       en: Everyday democracy
       nl: Dagelijkse democratie
-      fr: Democratie quotidienne
+      fr: Démocratie quotidienne
     direct_democracy:
       en: Direct democracy
       nl: Directe democratie
-      fr: Democratie directe
+      fr: Démocratie directe
     museums_democracy:
       en: Museums and democracy?
       nl: Musea en democratie?
-      fr: Musees et la democratie?
+      fr: Musées et démocratie ?
     ecocracy:
       en: Ecocracy
       nl: Ecocratie
-      fr: Ecocratie
+      fr: Écocratie
     protest:
       en: Protest
       nl: Protest

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.models.fields import Comment_ID, CommentText,\
             LanguageCode, ReplyTo, TimeStamp, Topic
@@ -38,8 +38,8 @@ class Flag(FlagCreate):
 class CommentCreate(BaseModel):
     """Create model for a Comment that isn't a reply, i.e. added via 'I want to say something else'"""
     text: CommentText
-    reply_to: ReplyTo = None
-    topics: tuple[Topic, ...] | None = None
+    reply_to: ReplyTo | None
+    topics: tuple[Topic, ...] | None
 
     @model_validator(mode="after")
     def check_exactly_one(self) -> "CommentCreate":
@@ -76,7 +76,12 @@ class Comment(CommentCreate, Statement):
 
 class ConversationStarter(Statement):
     # topics: tuple[Topic, ...]
-    pass
+
+    # This starter's full text in other languages, keyed by ISO 639-1 code (e.g. {"en": "...",
+    # "fr": "..."}); does not need to include its own `language`. Populated by the CSV loader
+    # from the translated survey export; empty for starters built without translations
+    # (e.g. in tests), in which case renders fall back to the starter's own text/language.
+    translations: dict[str, str] = Field(default_factory=dict)
     
 
 #################################################

@@ -16,7 +16,7 @@ and click Connect.
 ```
 app/
   main.py        FastAPI app, lifespan, GET /db, uvicorn entry
-  db.py          in-memory DB and seed data
+  data.py        in-memory DB and seed data
   ws/
     manager.py   connection registry, anonymous IDs, broadcast
     sender.py    broadcast loop (queue of new comments, random filler)

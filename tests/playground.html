@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C2C Playground</title>
+<style>
+  :root {
+    --bg: #fafafa; --fg: #222; --muted: #777; --line: #ddd; --panel: #fff;
+    --starter: #e8f0fb; --starter-line: #4a7fc1; --new: #222; --new-fg: #f4f4f4;
+    --err: #b3261e; --ok: #1b7f3b; --out: #6a4bc4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+  header h1 { font-size: 16px; margin: 0 12px 0 0; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+  section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 10px; }
+  input, select, button, textarea { font: inherit; padding: 6px 8px; border: 1px solid #bbb; border-radius: 4px; background: #fff; }
+  button { cursor: pointer; }
+  button.primary { background: #222; color: #fff; border-color: #222; }
+  textarea { width: 100%; min-height: 64px; resize: vertical; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+  .status { width: 10px; height: 10px; border-radius: 50%; background: #bbb; display: inline-block; }
+  .status.on { background: var(--ok); }
+  .slot { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin: 6px 0; min-height: 56px; cursor: pointer; position: relative; transition: background .15s; }
+  .slot:hover { background: #f2f2f2; }
+  .slot .meta { font-size: 11px; color: var(--muted); display: flex; gap: 10px; margin-bottom: 4px; }
+  .slot .text { white-space: pre-wrap; }
+  .slot.flagged .text { filter: blur(4px); }
+  .slot.starter { background: var(--starter); border-color: var(--starter-line); }
+  .slot.new { background: var(--new); color: var(--new-fg); }
+  .slot.new .meta { color: #bbb; }
+  .slot.selected { outline: 2px solid var(--out); }
+  .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--starter-line); width: 0; }
+  .slot.new .bar { background: #fff; }
+  .topics { display: flex; flex-wrap: wrap; gap: 6px; }
+  .topics label { border: 1px solid #bbb; border-radius: 12px; padding: 2px 10px; font-size: 12px; cursor: pointer; user-select: none; }
+  .topics label:has(input:checked) { background: #222; color: #fff; border-color: #222; }
+  .topics input { display: none; }
+  .hint { font-size: 12px; color: var(--muted); }
+  #log { font: 12px/1.5 ui-monospace, monospace; height: 320px; overflow-y: auto; background: #f4f4f4; border: 1px solid var(--line); padding: 8px; white-space: pre-wrap; word-break: break-all; }
+  #log .in { color: #333; }
+  #log .out { color: var(--out); }
+  #log .err { color: var(--err); }
+  #log .sys { color: var(--muted); }
+  #log .t { color: #999; }
+  pre.dump { font: 12px/1.4 ui-monospace, monospace; max-height: 360px; overflow: auto; background: #f4f4f4; border: 1px solid var(--line); padding: 8px; margin: 0; }
+  .wide { grid-column: 1 / -1; }
+  .count { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>C2C Playground</h1>
+  <span class="status" id="status"></span>
+  <input id="server" value="127.0.0.1:8000" size="18" title="host:port of the backend">
+  <button id="connect" class="primary">Connect</button>
+  <button id="disconnect" disabled>Disconnect</button>
+  <label>UI language
+    <select id="lang"><option value="en">en</option><option value="nl">nl</option><option value="fr">fr</option></select>
+  </label>
+  <label><input type="checkbox" id="autoscroll" checked> autoscroll log</label>
+</header>
+
+<main>
+  <section>
+    <h2>Live conversation</h2>
+    <div class="slot" id="slot-top" data-slot="top"><div class="meta">top</div><div class="text hint">waiting…</div><div class="bar"></div></div>
+    <div class="slot" id="slot-bottom" data-slot="bottom"><div class="meta">bottom</div><div class="text hint">waiting…</div><div class="bar"></div></div>
+    <p class="hint">Click a slot to reply to that comment or to prefill the flag form. Starters are blue, your freshly submitted comment is black, flagged comments are blurred. The thin bar shows <code>display_seconds</code>.</p>
+    <div class="row count">received: <span id="n-in">0</span> · sent: <span id="n-out">0</span> · errors: <span id="n-err">0</span></div>
+  </section>
+
+  <section>
+    <h2>Send a comment</h2>
+    <div class="row">
+      <label><input type="radio" name="mode" value="reply" checked> reply to comment</label>
+      <label><input type="radio" name="mode" value="new"> new conversation (topics)</label>
+    </div>
+    <div class="row" id="reply-row">
+      <label>reply_to <input id="reply-to" type="number" min="1" style="width:6em"></label>
+      <span class="hint" id="reply-hint">click a slot or type an ID</span>
+    </div>
+    <div id="topics-row" hidden>
+      <div class="topics" id="topics"></div>
+      <p class="hint">topics come from <code>GET /messages</code> → new_comment.topics</p>
+    </div>
+    <textarea id="text" placeholder="Comment text"></textarea>
+    <div class="row">
+      <button id="send-comment" class="primary" disabled>Send comment</button>
+      <button id="send-random" disabled title="send a random sentence as a reply to the currently shown comment">Send random reply</button>
+    </div>
+
+    <h2 style="margin-top:18px">Flag a comment</h2>
+    <div class="row">
+      <label>comment_ID <input id="flag-id" type="number" min="1" style="width:6em"></label>
+      <label>reason <input id="flag-reason" value="test flag" style="width:12em"></label>
+      <label><input type="checkbox" id="flag-dns" checked> donotshow</label>
+      <button id="send-flag" disabled>Send flag</button>
+    </div>
+
+    <h2 style="margin-top:18px">Raw JSON</h2>
+    <textarea id="raw" placeholder='{"type": "comment", "payload": {"text": "…", "reply_to": 1, "topics": null}}'></textarea>
+    <div class="row"><button id="send-raw" disabled>Send raw</button><span class="hint">sends the text above verbatim (must be valid JSON)</span></div>
+  </section>
+
+  <section class="wide">
+    <h2>Log <button id="clear-log" style="float:right">clear</button></h2>
+    <div id="log"></div>
+  </section>
+
+  <section class="wide">
+    <h2>HTTP</h2>
+    <div class="row">
+      <button id="get-db">GET /db</button>
+      <button id="get-messages">GET /messages</button>
+      <button id="get-messages-lang">GET /messages?lang=…</button>
+      <input id="filter" placeholder="filter /db by text or topic" style="flex:1; min-width: 200px">
+      <span class="count" id="http-count"></span>
+    </div>
+    <pre class="dump" id="dump">nothing loaded</pre>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let ws = null;
+  let counts = { in: 0, out: 0, err: 0 };
+  let selected = null;           // {ID, kind}
+  let lastComment = null;        // last comment ID shown in a slot
+  let dbCache = null;
+  let topicsCache = null;        // {id: {lang: label}}
+  const timers = { top: null, bottom: null };
+
+  // ---------- logging ----------
+  const log = (cls, msg) => {
+    const el = document.createElement('div');
+    el.className = cls;
+    const t = new Date().toLocaleTimeString();
+    el.innerHTML = `<span class="t">${t}</span> ${escape(msg)}`;
+    $('log').appendChild(el);
+    if ($('autoscroll').checked) $('log').scrollTop = $('log').scrollHeight;
+  };
+  const escape = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const bump = (k) => { counts[k]++; $('n-' + k).textContent = counts[k]; };
+  $('clear-log').onclick = () => { $('log').innerHTML = ''; };
+
+  // ---------- connection ----------
+  const base = () => $('server').value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const httpUrl = (path) => `http://${base()}${path}`;
+  const wsUrl = () => `ws://${base()}/ws`;
+
+  const setConnected = (on) => {
+    $('status').classList.toggle('on', on);
+    $('connect').disabled = on;
+    $('disconnect').disabled = !on;
+    for (const id of ['send-comment', 'send-random', 'send-flag', 'send-raw']) $(id).disabled = !on;
+  };
+
+  $('connect').onclick = () => {
+    if (ws) return;
+    const url = wsUrl();
+    log('sys', `connecting to ${url}`);
+    try { ws = new WebSocket(url); } catch (e) { log('err', String(e)); return; }
+    ws.onopen = () => { setConnected(true); log('sys', 'connected'); loadTopics(); };
+    ws.onclose = (e) => { setConnected(false); ws = null; log('sys', `closed (code ${e.code}${e.reason ? ', ' + e.reason : ''})`); };
+    ws.onerror = () => { log('err', 'websocket error (is the backend running? see console)'); };
+    ws.onmessage = (ev) => {
+      bump('in');
+      let data;
+      try { data = JSON.parse(ev.data); } catch { log('err', 'non-JSON frame: ' + ev.data); return; }
+      if (data.error !== undefined) {
+        bump('err');
+        log('err', '← error ' + JSON.stringify(data.error));
+        return;
+      }
+      log('in', '← ' + JSON.stringify(data));
+      render(data);
+    };
+  };
+  $('disconnect').onclick = () => { if (ws) ws.close(1000, 'user'); };
+
+  const send = (obj) => {
+    if (!ws || ws.readyState !== 1) { log('err', 'not connected'); return; }
+    const s = typeof obj === 'string' ? obj : JSON.stringify(obj);
+    ws.send(s);
+    bump('out');
+    log('out', '→ ' + s);
+  };
+
+  // ---------- rendering ----------
+  const setSlot = (slot, { kind, ID, text, language, flagged, cls, seconds }) => {
+    const el = $('slot-' + slot);
+    el.className = 'slot ' + (cls || '');
+    if (flagged) el.classList.add('flagged');
+    el.dataset.id = ID;
+    el.dataset.kind = kind;
+    el.querySelector('.meta').innerHTML =
+      `<span>${slot}</span><span>${kind}</span><span>ID ${ID}</span><span>${language || ''}</span>` +
+      (flagged ? '<span>FLAGGED</span>' : '') + (seconds != null ? `<span>${seconds.toFixed(2)}s</span>` : '');
+    el.querySelector('.text').className = 'text';
+    el.querySelector('.text').textContent = text;
+    if (selected && selected.ID === ID) el.classList.add('selected');
+    // progress bar
+    const bar = el.querySelector('.bar');
+    clearInterval(timers[slot]);
+    bar.style.width = '0%';
+    if (seconds) {
+      const start = performance.now();
+      timers[slot] = setInterval(() => {
+        const p = Math.min(1, (performance.now() - start) / (seconds * 1000));
+        bar.style.width = (p * 100) + '%';
+        if (p >= 1) clearInterval(timers[slot]);
+      }, 50);
+    }
+  };
+
+  const render = (msg) => {
+    const p = msg.payload;
+    switch (msg.type) {
+      case 'conversation_starter':
+        setSlot(p.starter.slot, { kind: 'starter', ID: p.starter.ID, text: p.starter.text, language: p.starter.language, cls: 'starter', seconds: msg.display_seconds });
+        setSlot(p.translation.slot, { kind: 'starter (translation)', ID: p.translation.ID, text: p.translation.text, language: p.translation.language, cls: 'starter', seconds: msg.display_seconds });
+        break;
+      case 'comment':
+        lastComment = p.ID;
+        setSlot(p.slot, { kind: 'comment', ID: p.ID, text: p.text, language: p.language, flagged: p.is_flagged, seconds: msg.display_seconds });
+        break;
+      case 'new_comment':
+        // no slot on the wire: show it in both, as the frontend would take over the screen
+        lastComment = p.ID;
+        for (const s of ['top', 'bottom']) setSlot(s, { kind: 'NEW comment', ID: p.ID, text: p.text, language: p.language, cls: 'new', seconds: msg.display_seconds });
+        break;
+      default:
+        log('err', 'unknown message type: ' + msg.type);
+    }
+  };
+
+  for (const s of ['top', 'bottom']) {
+    $('slot-' + s).onclick = () => {
+      const el = $('slot-' + s);
+      if (!el.dataset.id) return;
+      selected = { ID: Number(el.dataset.id), kind: el.dataset.kind };
+      document.querySelectorAll('.slot').forEach((x) => x.classList.toggle('selected', Number(x.dataset.id) === selected.ID));
+      $('reply-to').value = selected.ID;
+      $('reply-hint').textContent = `replying to ${selected.kind} ${selected.ID}`;
+      if (!selected.kind.startsWith('starter')) $('flag-id').value = selected.ID;
+      document.querySelector('input[name=mode][value=reply]').checked = true;
+      toggleMode();
+    };
+  }
+
+  // ---------- comment form ----------
+  const toggleMode = () => {
+    const reply = document.querySelector('input[name=mode]:checked').value === 'reply';
+    $('reply-row').hidden = !reply;
+    $('topics-row').hidden = reply;
+  };
+  document.querySelectorAll('input[name=mode]').forEach((r) => (r.onchange = toggleMode));
+
+  const buildTopics = () => {
+    const lang = $('lang').value;
+    const box = $('topics');
+    const checked = new Set([...box.querySelectorAll('input:checked')].map((i) => i.value));
+    box.innerHTML = '';
+    if (!topicsCache) { box.innerHTML = '<span class="hint">connect (or GET /messages) to load topics</span>'; return; }
+    for (const [id, labels] of Object.entries(topicsCache)) {
+      const l = document.createElement('label');
+      l.innerHTML = `<input type="checkbox" value="${id}" ${checked.has(id) ? 'checked' : ''}> ${escape(labels[lang] || labels.en || id)} <span class="hint">(${id})</span>`;
+      box.appendChild(l);
+    }
+  };
+  const loadTopics = async () => {
+    if (topicsCache) return;
+    try {
+      const r = await fetch(httpUrl('/messages'));
+      const m = await r.json();
+      topicsCache = m.new_comment.topics;
+      buildTopics();
+    } catch (e) { log('err', 'could not load topics from /messages: ' + e); }
+  };
+  $('lang').onchange = buildTopics;
+  buildTopics();
+
+  $('send-comment').onclick = () => {
+    const text = $('text').value.trim();
+    if (!text) { log('err', 'empty comment text'); return; }
+    const reply = document.querySelector('input[name=mode]:checked').value === 'reply';
+    let payload;
+    if (reply) {
+      const id = Number($('reply-to').value);
+      if (!id) { log('err', 'reply_to is empty'); return; }
+      payload = { text, reply_to: id, topics: null };
+    } else {
+      const topics = [...$('topics').querySelectorAll('input:checked')].map((i) => i.value);
+      if (!topics.length) { log('err', 'pick at least one topic'); return; }
+      payload = { text, reply_to: null, topics };
+    }
+    send({ type: 'comment', payload });
+    $('text').value = '';
+  };
+
+  const RANDOM = [
+    'I completely disagree with that.', 'Can you give an example?', 'That is exactly what I have been thinking lately.',
+    'Dat is precies wat ik de laatste tijd ook denk.', 'Pourquoi pensez-vous cela ?', 'Interesting point, but I see it differently.',
+    'Democracy starts at the kitchen table.', 'Who decides what counts as a vote?',
+  ];
+  $('send-random').onclick = () => {
+    const id = Number($('reply-to').value) || lastComment;
+    if (!id) { log('err', 'no comment to reply to yet'); return; }
+    send({ type: 'comment', payload: { text: RANDOM[Math.floor(Math.random() * RANDOM.length)], reply_to: id, topics: null } });
+  };
+
+  // ---------- flag form ----------
+  $('send-flag').onclick = () => {
+    const id = Number($('flag-id').value);
+    if (!id) { log('err', 'comment_ID is empty'); return; }
+    send({ type: 'flag', payload: { reason: $('flag-reason').value, donotshow: $('flag-dns').checked, comment_ID: id } });
+  };
+
+  // ---------- raw ----------
+  $('send-raw').onclick = () => {
+    const raw = $('raw').value.trim();
+    try { JSON.parse(raw); } catch (e) { log('err', 'raw is not valid JSON: ' + e.message); return; }
+    send(raw);
+  };
+
+  // ---------- HTTP ----------
+  const dump = (obj, note) => {
+    $('dump').textContent = JSON.stringify(obj, null, 2);
+    $('http-count').textContent = note || '';
+  };
+  const get = async (path) => {
+    log('sys', `GET ${path}`);
+    try {
+      const r = await fetch(httpUrl(path));
+      const j = await r.json();
+      if (!r.ok) { log('err', `${path} → ${r.status} ${JSON.stringify(j)}`); }
+      return j;
+    } catch (e) { log('err', `${path} failed: ${e} (is the backend running / CORS?)`); throw e; }
+  };
+  const showDb = () => {
+    if (!dbCache) return;
+    const q = $('filter').value.trim().toLowerCase();
+    const rows = q ? dbCache.filter((s) => s.text.toLowerCase().includes(q) || (s.topics || []).some((t) => t.includes(q))) : dbCache;
+    dump(rows, `${rows.length} of ${dbCache.length} statements`);
+  };
+  $('get-db').onclick = async () => { dbCache = await get('/db'); showDb(); };
+  $('filter').oninput = showDb;
+  $('get-messages').onclick = async () => { const m = await get('/messages'); topicsCache = m.new_comment.topics; buildTopics(); dump(m, 'all languages'); };
+  $('get-messages-lang').onclick = async () => { const l = $('lang').value; dump(await get('/messages?lang=' + l), 'lang=' + l); };
+
+  // Enter in the textarea sends (Shift+Enter for newline)
+  $('text').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('send-comment').click(); } });
+})();
+</script>
+</body>
+</html>
