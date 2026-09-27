@@ -44,10 +44,11 @@ class StatementRender(BaseModel):
     ID: int  # passed to the frontend, so it can pass it back e.g. for flagging
     text: CommentText
     language: Language
+    slot: Slot
+
 
 
 class CommentRender(StatementRender):
-    slot: Slot
     is_flagged: bool  # flagged comments may be blurred to be illegible
 
     @classmethod
@@ -59,14 +60,12 @@ class CommentRender(StatementRender):
 
 class NewCommentRender(StatementRender):
     @classmethod
-    def from_Comment(cls, comment: Comment):
-        return cls(ID=comment.ID, text=comment.text,
+    def from_Comment(cls, comment: Comment, slot: Slot):
+        return cls(ID=comment.ID, text=comment.text, slot=slot,
                   language=comment.language)
 
 
 class ConversationStarterTextRender(StatementRender):
-    slot: Slot
-
     @classmethod
     def from_ConversationStarter(
         cls,
@@ -141,11 +140,12 @@ OutgoingMessage = Annotated[
 
 
 def render(statement: Statement, slot: Slot, new: bool = False) -> BaseModel:
-    """Wrap a DB entry in the outgoing envelope matching its class."""
-    l = len(statement.text)
-    normed = (l - 0)/(200 - 0)  # 0 and 200 are theoretical limits
-    display_seconds = (normed * 3) + 1 # implies that length will be between 1 and 4
-    
+    # l = len(statement.text)
+    # normed = (l - 0)/(40 - 0)  # 0 and 200 are theoretical limits
+    # display_seconds = (normed * 3) + 1 # implies that length will be between 1 and 4 (seconds)
+
+    display_seconds = 20
+     
     match statement:
         case ConversationStarter():
             return ConversationStarterRenderMessage(
@@ -153,7 +153,7 @@ def render(statement: Statement, slot: Slot, new: bool = False) -> BaseModel:
                 display_seconds=display_seconds
             )
         case Comment() if new:
-            return NewCommentRenderMessage(payload=NewCommentRender.from_Comment(statement),
+            return NewCommentRenderMessage(payload=NewCommentRender.from_Comment(statement, slot),
                 display_seconds=display_seconds
             )
         case Comment():
