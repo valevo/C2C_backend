@@ -217,6 +217,7 @@ async def sender_loop(app_state: State):
             convo = new_convo(cur)  # TODO: include parent
             next(convo)  # skip `cur` itself (the convo's start): it is repeated via repeat_as_comment
             repeat_as_comment = cur.to_Comment()
+            app_state.current_slot = "bottom"  # a new comment is always shown in the bottom slot
         else:
             try:
                 cur = next(convo)
