@@ -17,7 +17,8 @@ from starlette.datastructures import State
 from app.conversation import SampledConversation
 from app.data import Comments, ConversationStarters, make_random_comments
 from app.i18n import DEFAULT_LANGUAGE, MESSAGES, Language
-from app.models import CommentCreateMessage, ConversationStarter, Flag, FlagCreateMessage, incoming_adapter, render
+from app.models import (CommentCreateMessage, ConversationStarter, ConversationStarterRender, Flag,
+                        FlagCreateMessage, incoming_adapter, render)
 
 INTERVAL=20
 LONG_INTERVAL=40  # after a conversation starter or a new comment: INTERVAL + the frontend's 20s animation
@@ -30,6 +31,13 @@ def next_slot(app_state: State) -> str:
     slot = app_state.current_slot
     app_state.current_slot = "bottom" if slot == "top" else "top"
     return slot
+
+
+def shown_slot(msg) -> str:
+    """The slot a rendered message shows its statement's own text in
+    (for a starter: the original-language text, not the translation)."""
+    payload = msg.payload
+    return payload.starter.slot if isinstance(payload, ConversationStarterRender) else payload.slot
 
 
 
@@ -196,6 +204,8 @@ async def sender_loop(app_state: State):
         if repeat_as_comment is not None:
             # the starter/new comment sent last is repeated once as a Comment, before anything else
             cur, repeat_as_comment, is_new = repeat_as_comment, None, False
+            # in the same slot as the starter/new comment; alternation continues from there
+            app_state.current_slot = repeat_slot
         elif is_new:
             cur = queue.get_nowait()
             
@@ -226,6 +236,8 @@ async def sender_loop(app_state: State):
         msg = render(cur, next_slot(app_state), new=is_new)
         app_state.last_msg = msg.model_dump(mode="json")
         await broadcast(app_state, app_state.last_msg)
+        if repeat_as_comment is not None:
+            repeat_slot = shown_slot(msg)
 
         # sleep after sending, so the first message goes out right at startup
         next_at += wait
