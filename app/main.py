@@ -190,6 +190,7 @@ async def sender_loop(app_state: State):
     )
     convo = iter(())  # empty: the first step opens a conversation like every later one
     repeat_as_comment = None  # sent right after a conversation starter or a new comment
+    is_first = True  # the first message since startup
     while True:
         is_new = without_interception < 1 and not queue.empty()
         if repeat_as_comment is not None:
@@ -218,7 +219,10 @@ async def sender_loop(app_state: State):
                 without_interception -= 1
                 
 
-        wait = LONG_INTERVAL if is_new or isinstance(cur, ConversationStarter) else INTERVAL
+        # the first message after startup (a starter) waits INTERVAL like a Comment
+        long_wait = is_new or (isinstance(cur, ConversationStarter) and not is_first)
+        wait = LONG_INTERVAL if long_wait else INTERVAL
+        is_first = False
         msg = render(cur, next_slot(app_state), new=is_new)
         app_state.last_msg = msg.model_dump(mode="json")
         await broadcast(app_state, app_state.last_msg)
