@@ -17,9 +17,10 @@ from starlette.datastructures import State
 from app.conversation import SampledConversation
 from app.data import Comments, ConversationStarters, make_random_comments
 from app.i18n import DEFAULT_LANGUAGE, MESSAGES, Language
-from app.models import CommentCreateMessage, Flag, FlagCreateMessage, incoming_adapter, render
+from app.models import CommentCreateMessage, ConversationStarter, Flag, FlagCreateMessage, incoming_adapter, render
 
 INTERVAL=20
+LONG_INTERVAL=40  # after a conversation starter or a new comment: INTERVAL + the frontend's 20s animation
 MIN_CONVO_LEN=3
 N_RANDOM_COMMENTS=30
 IMAGES_DIR = Path(__file__).parent / "images"
@@ -140,11 +141,15 @@ async def receiver_loop(websocket):
                 # Comments.add builds the Comment and fills in topics from the parent
                 # (a starter or another comment) when the client sent none.
                 try:
+                    # the comment should actually not become part of the pool 
+                    # samplable comments yet 
                     comment = state.comments.add(comment_create)
                 except ValueError as e:
                     await websocket.send_json({"error": str(e)})
                     continue
+                
                 state.Q.put_nowait(comment)
+                
             case FlagCreateMessage(payload=flag_create):
                 flag = Flag(**flag_create.model_dump())
                 target = state.comments.get(flag.comment_ID)
@@ -176,12 +181,21 @@ async def sender_loop(app_state: State):
     
     loop = asyncio.get_running_loop()
     next_at = loop.time()
+    # sampled Comments sent since the current conversation's start (the starter / new
+    # comment and its repeat don't count); a queued comment may interrupt once this hits 0
     without_interception = MIN_CONVO_LEN
-    new_convo = lambda start=None: SampledConversation(app_state.starters, app_state.comments, start)
-    convo = new_convo()
+    # min_len counts the start, so every conversation has at least MIN_CONVO_LEN sampled Comments
+    new_convo = lambda start=None: SampledConversation(
+        app_state.starters, app_state.comments, start, min_len=MIN_CONVO_LEN + 1
+    )
+    convo = iter(())  # empty: the first step opens a conversation like every later one
+    repeat_as_comment = None  # sent right after a conversation starter or a new comment
     while True:
         is_new = without_interception < 1 and not queue.empty()
-        if is_new:
+        if repeat_as_comment is not None:
+            # the starter/new comment sent last is repeated once as a Comment, before anything else
+            cur, repeat_as_comment, is_new = repeat_as_comment, None, False
+        elif is_new:
             cur = queue.get_nowait()
             
             without_interception = MIN_CONVO_LEN
@@ -190,20 +204,27 @@ async def sender_loop(app_state: State):
             # here, this comment starts its own conversation together with its parent
             # (if there is one)
             convo = new_convo(cur)  # TODO: include parent
+            next(convo)  # skip `cur` itself (the convo's start): it is repeated via repeat_as_comment
+            repeat_as_comment = cur.to_Comment()
         else:
             try:
                 cur = next(convo)
             except StopIteration:
                 convo = new_convo()
                 cur = next(convo)
-            without_interception -= 1
+                repeat_as_comment = cur.to_Comment()
+                without_interception = MIN_CONVO_LEN  # the starter doesn't count
+            else:
+                without_interception -= 1
+                
 
+        wait = LONG_INTERVAL if is_new or isinstance(cur, ConversationStarter) else INTERVAL
         msg = render(cur, next_slot(app_state), new=is_new)
         app_state.last_msg = msg.model_dump(mode="json")
         await broadcast(app_state, app_state.last_msg)
 
         # sleep after sending, so the first message goes out right at startup
-        next_at += INTERVAL
+        next_at += wait
         await asyncio.sleep(max(0, next_at - loop.time()))
 
 

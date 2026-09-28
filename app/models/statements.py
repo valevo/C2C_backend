@@ -65,6 +65,14 @@ class Comment(CommentCreate, Statement):
     def check_exactly_one(self) -> "CommentCreate":
         return self
 
+    def to_Comment(self) -> Comment:
+        """This comment as a Comment, i.e. itself (counterpart of ConversationStarter.to_Comment).
+
+        Returns `self` rather than a copy, so a flag set on the stored comment
+        in the meantime still shows when it is rendered.
+        """
+        return self
+
     # def __init__(self, 
     def __repr__(self):
         return f'Comment("{self.text}")'
@@ -82,7 +90,17 @@ class ConversationStarter(Statement):
     # from the translated survey export; empty for starters built without translations
     # (e.g. in tests), in which case renders fall back to the starter's own text/language.
     translations: dict[str, str] = Field(default_factory=dict)
-    
+
+    def to_Comment(self) -> Comment:
+        """This starter as a top-level Comment (same ID, text, language, timestamp and topics).
+
+        The translations are dropped; the Comment is unflagged and not a reply.
+        """
+        return Comment(
+            ID=self.ID, text=self.text, language=self.language,
+            timestamp=self.timestamp, topics=self.topics, reply_to=None,
+        )
+
 
 #################################################
 ##### OTHER: SMALL MESSAGES
