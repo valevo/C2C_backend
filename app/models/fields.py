@@ -12,6 +12,14 @@ from app.i18n import Language, Topic as TopicEnum
 
 _id_counter = count(1)
 
+
+
+def reserve_ids(max_ID: int) -> None:
+    """Make IDs generated from now on start after `max_ID` (e.g. the highest ID loaded from CSV)."""
+    global _id_counter
+    _id_counter = count(max(max_ID + 1, next(_id_counter)))
+
+
 Comment_ID = Annotated[int, Field(default_factory=lambda: next(_id_counter))]
 
 CommentText = Annotated[str, Field(description="Comment body, plain text")]

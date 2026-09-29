@@ -10,11 +10,12 @@ from app.models import Comment, ConversationStarter, Statement
 class SampledConversation(Iterator[Statement]):
     """Iterator over one conversation: a start statement followed by random replies.
 
-    The replies are comments in the thread of the conversation's starter (direct replies
-    and replies to those), each shown at most once. The conversation yields at least
-    `min_len` statements (counting the start) as long as unshown replies remain; after
+    The replies are sampleable (verified, unflagged) comments in the thread of the
+    conversation's starter (direct replies and replies to those), each shown at most once.
+    The conversation yields at least `min_len` statements (counting the start) as long as
+    unshown replies remain; after
     that, each step continues with probability `continue_prob` and otherwise stops.
-    When no `start` is given, a random conversation starter that has replies opens the
+    When no `start` is given, a random conversation starter with sampleable replies opens the
     conversation. A freshly received comment can be passed as `start` so it opens its own
     conversation, continued by the thread of the starter it (indirectly) replies to.
 
@@ -44,8 +45,8 @@ class SampledConversation(Iterator[Statement]):
         self.emitted = 0
 
     def random_starter(self) -> ConversationStarter:
-        """A random starter with at least one reply (any starter if none has replies)."""
-        replied_to = {c.reply_to for c in self.comments}
+        """A random starter with at least one sampleable reply (any starter if none has one)."""
+        replied_to = {c.reply_to for c in self.comments.sampleable}
         with_replies = self.starters._new(s for s in self.starters if s.ID in replied_to)
         return (with_replies or self.starters).random(self.rng)
 
@@ -76,8 +77,11 @@ class SampledConversation(Iterator[Statement]):
         return found
 
     def sample_next(self) -> Statement | None:
-        """Pick a not yet shown reply from the starter's thread; None when all are shown."""
-        pool = [c for c in self.thread() if c.ID not in self.shown]
+        """Pick a sampleable, not yet shown reply from the starter's thread; None when none is left."""
+        pool = [
+            c for c in self.thread()
+            if c.verified and c.flag is None and c.ID not in self.shown
+        ]
         return self.rng.choice(pool) if pool else None
 
     def __next__(self) -> Statement:

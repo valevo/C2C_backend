@@ -53,6 +53,9 @@ class CommentCreate(BaseModel):
 class Comment(CommentCreate, Statement):
     # topics: tuple[Topic, ...] # this would be here to make topics non-optional
     flag: Flag | None = None
+    # only verified (and unflagged) comments are sampled into conversations; new comments
+    # start unverified and are verified by hand in the CSV they're stored in
+    verified: bool = False
 
     # @model_validator(mode="after")
     # def inherit_topics_from_reply(self) -> "Comment":

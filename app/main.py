@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, ValidationError
 from starlette.datastructures import State
 
 from app.conversation import SampledConversation
-from app.data import load_seed
+from app.data import append_comment_csv, load_seed, mark_flagged_csv
 from app.i18n import DEFAULT_LANGUAGE, MESSAGES, Language
 from app.models import (CommentCreateMessage, ConversationStarter, ConversationStarterRender, Flag,
                         FlagCreateMessage, incoming_adapter, render)
@@ -44,6 +44,7 @@ def shown_slot(msg) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # starters from data/seed_conversation_starters.csv, comments from data/seed_replies.csv
+    # and data/comments.csv (visitor comments)
     app.state.starters, app.state.comments = load_seed()
     app.state.current_slot = "top"
     app.state.Q = asyncio.Queue()
@@ -145,13 +146,14 @@ async def receiver_loop(websocket):
                 # Comments.add builds the Comment and fills in topics from the parent
                 # (a starter or another comment) when the client sent none.
                 try:
-                    # the comment should actually not become part of the pool 
-                    # samplable comments yet 
+                    # new comments are unverified, so they aren't sampled into conversations
+                    # until verified by hand in data/comments.csv
                     comment = state.comments.add(comment_create)
                 except ValueError as e:
                     await websocket.send_json({"error": str(e)})
                     continue
-                
+                append_comment_csv(comment)
+
                 state.Q.put_nowait(comment)
                 
             case FlagCreateMessage(payload=flag_create):
@@ -160,7 +162,8 @@ async def receiver_loop(websocket):
                 if target is None:
                     await websocket.send_json({"error": f"unknown comment ID {flag.comment_ID}"})
                     continue
-                target.flag = flag
+                target.flag = flag  # flagged comments are no longer sampled
+                mark_flagged_csv(target.ID)
 
 
 
