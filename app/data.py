@@ -11,30 +11,30 @@ import pandas as pd
 
 from app.models import Comment, CommentCreate, ConversationStarter, Statement, Topic
 
-# <project root>/data/conversation_starters/
-CONVERSATION_STARTERS_DIR = Path(__file__).resolve().parents[1] / "data" / "conversation_starters"
-CONVERSATION_STARTERS_CSV = CONVERSATION_STARTERS_DIR / "conversation_starters_20260821_topics.csv"
-CONVERSATION_STARTERS_TRANSLATIONS_CSV = (
-    CONVERSATION_STARTERS_DIR / "conversation_starters_20260821_translated.csv"
-)
+# <project root>/data/
+DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+SEED_CONVERSATION_STARTERS_CSV = DATA_DIR / "seed_conversation_starters.csv"
+SEED_REPLIES_CSV = DATA_DIR / "seed_replies.csv"
 
-_CSV_TIMESTAMP_FORMAT = "%d/%m/%Y %H:%M:%S"
-_AFFIRMATIVE = {"ja", "yes", "oui"}
+_AFFIRMATIVE = {"1", "ja", "yes", "oui"}
 
 
-def read_conversation_starters_csv(path: Path = CONVERSATION_STARTERS_CSV) -> pd.DataFrame:
-    """Read the survey export CSV into a DataFrame.
+def read_seed_csv(path: Path) -> pd.DataFrame:
+    """Read a seed CSV into a DataFrame.
 
-    Columns: timestamp (parsed to datetime), text, permission_processing, permission_sharing,
-    language_code, topics (a JSON-encoded list of topic IDs, parsed to a tuple of Topic).
-    The leading unnamed column of the export is used as the index.
+    Shared columns: timestamp (ISO 8601, parsed to datetime), text, permission_processing,
+    permission_sharing, language_code. The starters CSV adds conversation_starter_ID and
+    topics (a JSON-encoded list of topic IDs, parsed to a tuple of Topic); the replies CSV
+    adds reply_to (a conversation_starter_ID).
     """
-    df = pd.read_csv(path, index_col=0, encoding="utf-8")
-    df["timestamp"] = pd.to_datetime(df["timestamp"], format=_CSV_TIMESTAMP_FORMAT)
+    df = pd.read_csv(path, encoding="utf-8", dtype={"permission_processing": str, "permission_sharing": str})
+    df["timestamp"] = pd.to_datetime(df["timestamp"], format="ISO8601")
     for col in ("text", "permission_processing", "permission_sharing", "language_code"):
         df[col] = df[col].fillna("").astype(str).str.strip()
     df["language_code"] = df["language_code"].str.lower()
-    df["topics"] = df["topics"].apply(_parse_topics)
+    if "topics" in df:
+        df["topics"] = df["topics"].apply(_parse_topics)
+    df = df[df["text"] != ""]
     return df
 
 
@@ -45,58 +45,69 @@ def _parse_topics(value) -> tuple[Topic, ...]:
     return tuple(Topic(name) for name in json.loads(value))
 
 
-def read_translations_csv(
-    path: Path = CONVERSATION_STARTERS_TRANSLATIONS_CSV,
-) -> dict[datetime, dict[str, str]]:
-    """Read the translated-starters CSV into {timestamp: {language_code: text}}.
-
-    That CSV shares its columns with the main survey export, but has three rows per
-    starter (one per language) sharing the same timestamp; grouping by timestamp
-    recovers each starter's translations.
-    """
-    df = pd.read_csv(path, index_col=0, encoding="utf-8")
-    df["timestamp"] = pd.to_datetime(df["timestamp"], format=_CSV_TIMESTAMP_FORMAT)
-    df["language_code"] = df["language_code"].fillna("").astype(str).str.strip().str.lower()
-    df["text"] = df["text"].fillna("").astype(str)
-    translations: dict[datetime, dict[str, str]] = {}
-    for row in df.itertuples(index=False):
-        translations.setdefault(row.timestamp.to_pydatetime(), {})[row.language_code] = row.text
-    return translations
+def _with_permission(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep rows with an affirmative answer ("1"/"Ja"/"Yes") in both permission columns."""
+    return df[
+        df["permission_processing"].str.lower().isin(_AFFIRMATIVE)
+        & df["permission_sharing"].str.lower().isin(_AFFIRMATIVE)
+    ]
 
 
 def load_conversation_starters(
-    path: Path = CONVERSATION_STARTERS_CSV,
+    path: Path = SEED_CONVERSATION_STARTERS_CSV,
     require_permission: bool = True,
-    translations_path: Path | None = CONVERSATION_STARTERS_TRANSLATIONS_CSV,
-) -> list[ConversationStarter]:
-    """Build ConversationStarters from the survey export CSV.
+) -> dict[int, ConversationStarter]:
+    """Build ConversationStarters from the seed starters CSV, keyed by conversation_starter_ID.
 
-    Each starter's topics come from the CSV's `topics` column.
-    With `require_permission`, rows lacking an affirmative answer ("Ja"/"Yes") in both
-    permission columns are skipped.
-    If `translations_path` is given, each starter's `translations` is populated from it
-    (matched to `path`'s rows by shared timestamp); pass None to skip, leaving every
-    starter's `translations` empty.
+    The CSV has one row per language of each starter, sharing a conversation_starter_ID.
+    The group's first row is the starter itself (its text, language, timestamp and topics);
+    the group's other rows become its `translations`.
+    With `require_permission`, rows lacking an affirmative answer in both permission
+    columns are skipped.
     """
-    df = read_conversation_starters_csv(path)
-    df = df[df["text"] != ""]
+    df = read_seed_csv(path)
     if require_permission:
-        df = df[
-            df["permission_processing"].str.lower().isin(_AFFIRMATIVE)
-            & df["permission_sharing"].str.lower().isin(_AFFIRMATIVE)
-        ]
-    translations_by_timestamp = (
-        read_translations_csv(translations_path) if translations_path is not None else {}
-    )
+        df = _with_permission(df)
+    starters: dict[int, ConversationStarter] = {}
+    for seed_ID, group in df.groupby("conversation_starter_ID", sort=False):
+        first = group.iloc[0]
+        starters[int(seed_ID)] = ConversationStarter(
+            text=first.text,
+            language=first.language_code,
+            timestamp=first.timestamp.to_pydatetime(),
+            topics=first.topics,
+            translations={
+                row.language_code: row.text
+                for row in group.iloc[1:].itertuples(index=False)
+            },
+        )
+    return starters
+
+
+def load_seed_replies(
+    starters_by_seed_ID: dict[int, ConversationStarter],
+    path: Path = SEED_REPLIES_CSV,
+    require_permission: bool = True,
+) -> list[Comment]:
+    """Build Comments from the seed replies CSV.
+
+    Each row's reply_to (a conversation_starter_ID from the starters CSV) is resolved
+    through `starters_by_seed_ID` to that starter's ID; the reply inherits its topics.
+    Rows replying to an unknown (or skipped) starter are dropped.
+    """
+    df = read_seed_csv(path)
+    if require_permission:
+        df = _with_permission(df)
     return [
-        ConversationStarter(
+        Comment(
             text=row.text,
             language=row.language_code,
             timestamp=row.timestamp.to_pydatetime(),
-            topics=row.topics,
-            translations=translations_by_timestamp.get(row.timestamp.to_pydatetime(), {}),
+            reply_to=starter.ID,
+            topics=starter.topics,
         )
         for row in df.itertuples(index=False)
+        if (starter := starters_by_seed_ID.get(int(row.reply_to))) is not None
     ]
 
 
@@ -214,18 +225,8 @@ class Statements(Sequence[S], Generic[S]):
 
 
 class ConversationStarters(Statements[ConversationStarter]):
-    """Static (read-only) collection of ConversationStarters, normally loaded from the survey CSV."""
+    """Static (read-only) collection of ConversationStarters, normally loaded from the seed CSV."""
 
-    @classmethod
-    def from_csv(
-        cls,
-        path: Path = CONVERSATION_STARTERS_CSV,
-        require_permission: bool = True,
-        translations_path: Path | None = CONVERSATION_STARTERS_TRANSLATIONS_CSV,
-    ) -> "ConversationStarters":
-        return cls(load_conversation_starters(
-            path, require_permission=require_permission, translations_path=translations_path,
-        ))
 
 
 
@@ -316,81 +317,83 @@ class Comments(Statements[Comment]):
         return {k: self._new(lst) for k, lst in groups.items()}
 
 
+def load_seed(
+    starters_path: Path = SEED_CONVERSATION_STARTERS_CSV,
+    replies_path: Path = SEED_REPLIES_CSV,
+    require_permission: bool = True,
+) -> tuple[ConversationStarters, Comments]:
+    """Load the seed conversation starters and the seed replies to them."""
+    starters_by_seed_ID = load_conversation_starters(starters_path, require_permission)
+    starters = ConversationStarters(starters_by_seed_ID.values())
+    replies = load_seed_replies(starters_by_seed_ID, replies_path, require_permission)
+    return starters, Comments(replies, starters=starters)
+
+
 #################################################
 ##### RANDOM COMMENTS (no CSV exists for these)
 #################################################
 
-_RANDOM_COMMENT_TEMPLATES: dict[str, tuple[str, ...]] = {
-    "en": (
-        "I completely agree with this.",
-        "I'm not sure about that, it depends on the context.",
-        "This reminds me of a discussion I had with a friend.",
-        "Interesting point, but I see it differently.",
-        "Why do you think that?",
-        "That's exactly what I've been thinking lately.",
-        "I disagree, but I understand where this comes from.",
-        "Could you give an example?",
-    ),
-    "nl": (
-        "Daar ben ik het helemaal mee eens.",
-        "Dat weet ik niet zo zeker, het hangt van de context af.",
-        "Dit doet me denken aan een gesprek met een vriend.",
-        "Interessant punt, maar ik zie het anders.",
-        "Waarom denk je dat?",
-        "Dat is precies wat ik de laatste tijd ook denk.",
-        "Ik ben het er niet mee eens, maar ik snap waar het vandaan komt.",
-        "Kun je een voorbeeld geven?",
-    ),
-    "fr": (
-        "Je suis tout à fait d'accord.",
-        "Je n'en suis pas sûr, ça dépend du contexte.",
-        "Ça me rappelle une discussion avec un ami.",
-        "Point intéressant, mais je vois ça autrement.",
-        "Pourquoi penses-tu cela ?",
-        "C'est exactement ce que je pense ces derniers temps.",
-        "Je ne suis pas d'accord, mais je comprends d'où ça vient.",
-        "Peux-tu donner un exemple ?",
-    ),
-}
+# _RANDOM_COMMENT_TEMPLATES: dict[str, tuple[str, ...]] = {
+#     "en": (
+#         "I completely agree with this.",
+#         "I'm not sure about that, it depends on the context.",
+#         "This reminds me of a discussion I had with a friend.",
+#         "Interesting point, but I see it differently.",
+#         "Why do you think that?",
+#         "That's exactly what I've been thinking lately.",
+#         "I disagree, but I understand where this comes from.",
+#         "Could you give an example?",
+#     ),
+#     "nl": (
+#         "Daar ben ik het helemaal mee eens.",
+#         "Dat weet ik niet zo zeker, het hangt van de context af.",
+#         "Dit doet me denken aan een gesprek met een vriend.",
+#         "Interessant punt, maar ik zie het anders.",
+#         "Waarom denk je dat?",
+#         "Dat is precies wat ik de laatste tijd ook denk.",
+#         "Ik ben het er niet mee eens, maar ik snap waar het vandaan komt.",
+#         "Kun je een voorbeeld geven?",
+#     ),
+#     "fr": (
+#         "Je suis tout à fait d'accord.",
+#         "Je n'en suis pas sûr, ça dépend du contexte.",
+#         "Ça me rappelle une discussion avec un ami.",
+#         "Point intéressant, mais je vois ça autrement.",
+#         "Pourquoi penses-tu cela ?",
+#         "C'est exactement ce que je pense ces derniers temps.",
+#         "Je ne suis pas d'accord, mais je comprends d'où ça vient.",
+#         "Peux-tu donner un exemple ?",
+#     ),
+# }
 
 
-def make_random_comments(
-    starters: Sequence[ConversationStarter],
-    n: int = 30,
-    rng: random.Random | None = None,
-    reply_chance: float = 0.3,
-) -> list[Comment]:
-    """Create `n` synthetic Comments, each replying to a random starter from `starters`.
+# def make_random_comments(
+#     starters: Sequence[ConversationStarter],
+#     n: int = 30,
+#     rng: random.Random | None = None,
+#     reply_chance: float = 0.3,
+# ) -> list[Comment]:
+#     """Create `n` synthetic Comments, each replying to a random starter from `starters`.
 
-    Each comment inherits language and topics from the statement it replies to and gets a
-    timestamp shortly after it. With probability `reply_chance` a comment replies to an
-    earlier generated comment instead of a starter, so the result contains small threads.
-    """
-    if not starters:
-        raise ValueError("need at least one ConversationStarter to reply to")
-    rng = rng or random.Random()
-    comments: list[Comment] = []
-    for _ in range(n):
-        parent: Statement = (
-            rng.choice(comments) if comments and rng.random() < reply_chance
-            else rng.choice(starters)
-        )
-        templates = _RANDOM_COMMENT_TEMPLATES.get(parent.language, _RANDOM_COMMENT_TEMPLATES["en"])
-        comments.append(Comment(
-            text=rng.choice(templates),
-            reply_to=parent.ID,
-            topics=parent.topics,
-            language=parent.language,
-            timestamp=parent.timestamp + timedelta(minutes=rng.randint(1, 3 * 24 * 60)),
-        ))
-    return comments
-
-
-# def seed_DB() -> dict[int, Statement]:
-#     starter = ConversationStarter(text="i think", topics=("what_is_democracy",))
-#     init_comments = [
-#         starter,
-#         Comment(text="hi", reply_to=starter.ID, topics=starter.topics),
-#         Comment(text="bye", reply_to=None, topics=("protest",)),
-#     ]
-#     return {c.ID: c for c in init_comments}
+#     Each comment inherits language and topics from the statement it replies to and gets a
+#     timestamp shortly after it. With probability `reply_chance` a comment replies to an
+#     earlier generated comment instead of a starter, so the result contains small threads.
+#     """
+#     if not starters:
+#         raise ValueError("need at least one ConversationStarter to reply to")
+#     rng = rng or random.Random()
+#     comments: list[Comment] = []
+#     for _ in range(n):
+#         parent: Statement = (
+#             rng.choice(comments) if comments and rng.random() < reply_chance
+#             else rng.choice(starters)
+#         )
+#         templates = _RANDOM_COMMENT_TEMPLATES.get(parent.language, _RANDOM_COMMENT_TEMPLATES["en"])
+#         comments.append(Comment(
+#             text=rng.choice(templates),
+#             reply_to=parent.ID,
+#             topics=parent.topics,
+#             language=parent.language,
+#             timestamp=parent.timestamp + timedelta(minutes=rng.randint(1, 3 * 24 * 60)),
+#         ))
+#     return comments

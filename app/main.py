@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, ValidationError
 from starlette.datastructures import State
 
 from app.conversation import SampledConversation
-from app.data import Comments, ConversationStarters, make_random_comments
+from app.data import load_seed
 from app.i18n import DEFAULT_LANGUAGE, MESSAGES, Language
 from app.models import (CommentCreateMessage, ConversationStarter, ConversationStarterRender, Flag,
                         FlagCreateMessage, incoming_adapter, render)
@@ -23,7 +23,6 @@ from app.models import (CommentCreateMessage, ConversationStarter, ConversationS
 INTERVAL=20
 LONG_INTERVAL=40  # after a conversation starter or a new comment: INTERVAL + the frontend's 20s animation
 MIN_CONVO_LEN=3
-N_RANDOM_COMMENTS=30
 IMAGES_DIR = Path(__file__).parent / "images"
 
 
@@ -44,11 +43,8 @@ def shown_slot(msg) -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.starters = ConversationStarters.from_csv()
-    app.state.comments = Comments(
-        make_random_comments(app.state.starters, n=N_RANDOM_COMMENTS),
-        starters=app.state.starters,
-    )
+    # starters from data/seed_conversation_starters.csv, comments from data/seed_replies.csv
+    app.state.starters, app.state.comments = load_seed()
     app.state.current_slot = "top"
     app.state.Q = asyncio.Queue()
     app.state.connections: set[WebSocket] = set()
@@ -200,13 +196,20 @@ async def sender_loop(app_state: State):
     repeat_as_comment = None  # sent right after a conversation starter or a new comment
     is_first = True  # the first message since startup
     while True:
-        is_new = without_interception < 1 and not queue.empty()
+        cur = None
         if repeat_as_comment is not None:
             # the starter/new comment sent last is repeated once as a Comment, before anything else
-            cur, repeat_as_comment, is_new = repeat_as_comment, None, False
+            cur, repeat_as_comment = repeat_as_comment, None
             # in the same slot as the starter/new comment; alternation continues from there
             app_state.current_slot = repeat_slot
-        elif is_new:
+        elif without_interception > 0 or queue.empty():
+            cur = next(convo, None)  # None: the conversation has ended
+            if cur is not None:
+                without_interception -= 1
+        # a queued comment interrupts once MIN_CONVO_LEN sampled Comments were sent,
+        # or as soon as the current conversation ends
+        is_new = cur is None and not queue.empty()
+        if is_new:
             cur = queue.get_nowait()
             
             without_interception = MIN_CONVO_LEN
@@ -218,17 +221,12 @@ async def sender_loop(app_state: State):
             next(convo)  # skip `cur` itself (the convo's start): it is repeated via repeat_as_comment
             repeat_as_comment = cur.to_Comment()
             app_state.current_slot = "bottom"  # a new comment is always shown in the bottom slot
-        else:
-            try:
-                cur = next(convo)
-            except StopIteration:
-                convo = new_convo()
-                cur = next(convo)
-                repeat_as_comment = cur.to_Comment()
-                without_interception = MIN_CONVO_LEN  # the starter doesn't count
-            else:
-                without_interception -= 1
-                
+        elif cur is None:
+            convo = new_convo()
+            cur = next(convo)
+            repeat_as_comment = cur.to_Comment()
+            without_interception = MIN_CONVO_LEN  # the starter doesn't count
+
 
         # the first message after startup (a starter) waits INTERVAL like a Comment
         long_wait = is_new or (isinstance(cur, ConversationStarter) and not is_first)
