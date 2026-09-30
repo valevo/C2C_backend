@@ -16,11 +16,14 @@ from app.models.fields import reserve_ids
 # <project root>/data/
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 SEED_CONVERSATION_STARTERS_CSV = DATA_DIR / "seed_conversation_starters.csv"
-SEED_REPLIES_CSV = DATA_DIR / "seed_replies.csv"
-# comments sent by visitors; created on the first new comment
+# all comments: the seed replies and those sent by visitors (appended as they arrive)
 COMMENTS_CSV = DATA_DIR / "comments.csv"
-COMMENTS_COLUMNS = ("comment_ID", "timestamp", "text", "language_code", "reply_to", "topics",
-                    "verified", "flagged")
+COMMENTS_COLUMNS = ("comment_ID", "timestamp", "text", "permission_processing",
+                    "permission_sharing", "language_code", "reply_to", "topics", "verified",
+                    "flag_id")
+# flags sent by visitors, referenced from the comment CSVs' flag_id column; created on the first flag
+FLAGS_CSV = DATA_DIR / "flags.csv"
+FLAGS_COLUMNS = ("flag_id", "timestamp", "comment_ID", "reason", "donotshow")
 
 _AFFIRMATIVE = {"1", "ja", "yes", "oui"}
 
@@ -28,11 +31,12 @@ _AFFIRMATIVE = {"1", "ja", "yes", "oui"}
 def read_seed_csv(path: Path) -> pd.DataFrame:
     """Read a seed (or comments) CSV into a DataFrame.
 
-    Shared columns: timestamp (ISO 8601, parsed to datetime), text, language_code.
-    The seed CSVs add permission_processing and permission_sharing. The starters CSV adds
-    conversation_starter_ID and topics (a JSON-encoded list of topic IDs, parsed to a tuple
-    of Topic); the replies and comments CSVs add comment_ID, reply_to (the ID of the
-    statement replied to), verified and flagged (1/0, parsed to bool).
+    Shared columns: timestamp (ISO 8601, parsed to datetime), text, permission_processing,
+    permission_sharing, language_code.
+    The starters CSV adds conversation_starter_ID and topics (a JSON-encoded list of topic IDs, parsed to a tuple
+    of Topic); the comments CSV adds comment_ID, reply_to (the ID of the statement replied
+    to), topics (empty: inherited from the statement replied to), verified (1/0, parsed to
+    bool) and flag_id (a flag_id in the flags CSV, empty if the comment isn't flagged).
     """
     df = pd.read_csv(path, encoding="utf-8", dtype={"permission_processing": str, "permission_sharing": str})
     df["timestamp"] = pd.to_datetime(df["timestamp"], format="ISO8601")
@@ -42,9 +46,10 @@ def read_seed_csv(path: Path) -> pd.DataFrame:
     df["language_code"] = df["language_code"].str.lower()
     if "topics" in df:
         df["topics"] = df["topics"].apply(_parse_topics)
-    for col in ("verified", "flagged"):
-        if col in df:
-            df[col] = df[col].fillna(0).astype(int).astype(bool)
+    if "verified" in df:
+        df["verified"] = df["verified"].fillna(0).astype(int).astype(bool)
+    if "flag_id" in df:
+        df["flag_id"] = df["flag_id"].astype("Int64")
     df = df[df["text"] != ""]
     return df
 
@@ -64,9 +69,44 @@ def _with_permission(df: pd.DataFrame) -> pd.DataFrame:
     ]
 
 
-def _csv_flag(comment_ID: int) -> Flag:
-    """The Flag of a comment marked flagged=1 in a CSV (the flag's details aren't stored)."""
-    return Flag(reason="flagged in CSV", donotshow=False, comment_ID=comment_ID)
+def _without_refusal(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop rows with a non-affirmative answer in either permission column; rows left
+    empty (comments sent through the app, which asks for no permissions) are kept."""
+    def ok(col: str) -> pd.Series:
+        return (df[col] == "") | df[col].str.lower().isin(_AFFIRMATIVE)
+    return df[ok("permission_processing") & ok("permission_sharing")]
+
+
+def load_flags(path: Path = FLAGS_CSV) -> dict[int, Flag]:
+    """Read the flags CSV into {flag_id: Flag}."""
+    if not path.exists():
+        return {}
+    with path.open(newline="", encoding="utf-8") as f:
+        return {
+            int(row["flag_id"]): Flag(
+                flag_id=int(row["flag_id"]),
+                timestamp=datetime.fromisoformat(row["timestamp"]),
+                comment_ID=int(row["comment_ID"]),
+                reason=row["reason"],
+                donotshow=row["donotshow"].strip().lower() in {"1", "true"},
+            )
+            for row in csv.DictReader(f)
+        }
+
+
+def _flag_of(row, flags: dict[int, Flag]) -> Flag | None:
+    """The Flag referenced by a comment row's flag_id (None if the row has none).
+
+    The comment row's flag_id decides which comment is flagged. A flag_id missing from the
+    flags CSV still flags the comment, with an empty reason.
+    """
+    if pd.isna(row.flag_id):
+        return None
+    flag = flags.get(int(row.flag_id))
+    if flag is None:
+        return Flag(flag_id=int(row.flag_id), reason="", donotshow=False,
+                    comment_ID=int(row.comment_ID))
+    return flag
 
 
 def load_conversation_starters(
@@ -101,41 +141,23 @@ def load_conversation_starters(
     return starters
 
 
-def load_seed_replies(
-    starters: "ConversationStarters",
-    path: Path = SEED_REPLIES_CSV,
+def load_comments_csv(
+    path: Path = COMMENTS_CSV,
+    flags: dict[int, Flag] | None = None,
     require_permission: bool = True,
 ) -> list[Comment]:
-    """Build Comments from the seed replies CSV.
+    """Build Comments from the comments CSV (appended to by `append_comment_csv`).
 
-    Each row's reply_to is the ID (conversation_starter_ID) of the starter it replies to;
-    the reply inherits that starter's topics. Rows replying to an unknown (or skipped)
-    starter are dropped.
+    Comments with empty topics inherit them from the statement they reply to (see
+    `Comments`). Flags are looked up in `flags` (see `load_flags`). With
+    `require_permission`, rows with a non-affirmative answer in a permission column are
+    skipped; empty permission cells don't count as a refusal.
     """
-    df = read_seed_csv(path)
-    if require_permission:
-        df = _with_permission(df)
-    return [
-        Comment(
-            ID=int(row.comment_ID),
-            text=row.text,
-            language=row.language_code,
-            timestamp=row.timestamp.to_pydatetime(),
-            reply_to=starter.ID,
-            topics=starter.topics,
-            verified=row.verified,
-            flag=_csv_flag(int(row.comment_ID)) if row.flagged else None,
-        )
-        for row in df.itertuples(index=False)
-        if (starter := starters.get(int(row.reply_to))) is not None
-    ]
-
-
-def load_comments_csv(path: Path = COMMENTS_CSV) -> list[Comment]:
-    """Build Comments from the visitor comments CSV (written by `append_comment_csv`)."""
     if not path.exists():
         return []
     df = read_seed_csv(path)
+    if require_permission:
+        df = _without_refusal(df)
     return [
         Comment(
             ID=int(row.comment_ID),
@@ -145,14 +167,14 @@ def load_comments_csv(path: Path = COMMENTS_CSV) -> list[Comment]:
             reply_to=None if pd.isna(row.reply_to) else int(row.reply_to),
             topics=row.topics,
             verified=row.verified,
-            flag=_csv_flag(int(row.comment_ID)) if row.flagged else None,
+            flag=_flag_of(row, flags or {}),
         )
         for row in df.itertuples(index=False)
     ]
 
 
 def append_comment_csv(comment: Comment, path: Path = COMMENTS_CSV) -> None:
-    """Append a visitor comment to the comments CSV, writing the header for a new file."""
+    """Append a new comment to the comments CSV, writing the header for a new file."""
     is_new = not path.exists()
     with path.open("a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -162,29 +184,46 @@ def append_comment_csv(comment: Comment, path: Path = COMMENTS_CSV) -> None:
             comment.ID,
             comment.timestamp.isoformat(timespec="seconds"),
             comment.text,
+            "",  # permission_processing: not asked for in the app
+            "",  # permission_sharing
             comment.language,
             "" if comment.reply_to is None else comment.reply_to,
             json.dumps([t.value for t in comment.topics]),
             int(comment.verified),
-            int(comment.flag is not None),
+            "" if comment.flag is None or comment.flag.flag_id is None else comment.flag.flag_id,
         ])
 
 
-def mark_flagged_csv(comment_ID: int, paths: Iterable[Path] = (SEED_REPLIES_CSV, COMMENTS_CSV)) -> bool:
-    """Set flagged=1 in the row with this comment_ID, in the first of `paths` that has it.
+def store_flag_csv(
+    flag: Flag,
+    flags_path: Path = FLAGS_CSV,
+    comment_paths: Iterable[Path] = (COMMENTS_CSV,),
+) -> bool:
+    """Store `flag` in the flags CSV and reference it from its comment's row.
 
-    Rewrites that file; returns False if no file has the comment.
+    The flag gets the next free flag_id (also set on `flag`) and is appended to the flags
+    CSV; the row with the flag's comment_ID, in the first of `comment_paths` that has it,
+    gets that flag_id (rewriting that file). Returns False if no file has the comment.
     """
-    for path in paths:
+    flag.flag_id = max(load_flags(flags_path), default=0) + 1
+    is_new = not flags_path.exists()
+    with flags_path.open("a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if is_new:
+            writer.writerow(FLAGS_COLUMNS)
+        writer.writerow([flag.flag_id, flag.timestamp.isoformat(timespec="seconds"),
+                         flag.comment_ID, flag.reason, int(flag.donotshow)])
+
+    for path in comment_paths:
         if not path.exists():
             continue
         with path.open(newline="", encoding="utf-8") as f:
             rows = list(csv.reader(f))
         header = rows[0]
-        id_col, flagged_col = header.index("comment_ID"), header.index("flagged")
+        id_col, flag_col = header.index("comment_ID"), header.index("flag_id")
         for row in rows[1:]:
-            if row[id_col] == str(comment_ID):
-                row[flagged_col] = "1"
+            if row[id_col] == str(flag.comment_ID):
+                row[flag_col] = str(flag.flag_id)
                 with path.open("w", newline="", encoding="utf-8") as f:
                     csv.writer(f).writerows(rows)
                 return True
@@ -404,21 +443,19 @@ class Comments(Statements[Comment]):
 
 def load_seed(
     starters_path: Path = SEED_CONVERSATION_STARTERS_CSV,
-    replies_path: Path = SEED_REPLIES_CSV,
     comments_path: Path = COMMENTS_CSV,
+    flags_path: Path = FLAGS_CSV,
     require_permission: bool = True,
 ) -> tuple[ConversationStarters, Comments]:
-    """Load the seed conversation starters, the seed replies and the visitor comments.
+    """Load the seed conversation starters and the comments, with the comments' flags.
 
     IDs come from the CSVs; IDs generated afterwards (for new comments) continue after the
     highest of them.
     """
     starters = ConversationStarters(load_conversation_starters(starters_path, require_permission))
-    comments = Comments(
-        [*load_seed_replies(starters, replies_path, require_permission),
-         *load_comments_csv(comments_path)],
-        starters=starters,
-    )
+    flags = load_flags(flags_path)
+    comments = Comments(load_comments_csv(comments_path, flags, require_permission),
+                        starters=starters)
     overlap = set(starters.ids) & set(comments.ids)
     if overlap:
         raise ValueError(f"IDs used by both a starter and a comment: {sorted(overlap)}")

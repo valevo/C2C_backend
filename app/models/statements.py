@@ -29,6 +29,8 @@ class FlagCreate(BaseModel):
 class Flag(FlagCreate):
     # author_ID is skipped because it would just be the connection's ID
     timestamp: TimeStamp
+    # the flag's row in data/flags.csv; None until it is stored there
+    flag_id: int | None = None
 
 
 #################################################

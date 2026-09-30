@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, ValidationError
 from starlette.datastructures import State
 
 from app.conversation import SampledConversation
-from app.data import append_comment_csv, load_seed, mark_flagged_csv
+from app.data import append_comment_csv, load_seed, store_flag_csv
 from app.i18n import DEFAULT_LANGUAGE, MESSAGES, Language
 from app.models import (CommentCreateMessage, ConversationStarter, ConversationStarterRender, Flag,
                         FlagCreateMessage, incoming_adapter, render)
@@ -43,8 +43,8 @@ def shown_slot(msg) -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # starters from data/seed_conversation_starters.csv, comments from data/seed_replies.csv
-    # and data/comments.csv (visitor comments)
+    # starters from data/seed_conversation_starters.csv, comments (seed replies and
+    # visitor comments) from data/comments.csv
     app.state.starters, app.state.comments = load_seed()
     app.state.current_slot = "top"
     app.state.Q = asyncio.Queue()
@@ -163,7 +163,7 @@ async def receiver_loop(websocket):
                     await websocket.send_json({"error": f"unknown comment ID {flag.comment_ID}"})
                     continue
                 target.flag = flag  # flagged comments are no longer sampled
-                mark_flagged_csv(target.ID)
+                store_flag_csv(flag)  # data/flags.csv, and its flag_id in the comment's row
 
 
 
