@@ -15,7 +15,7 @@ from app.models.fields import reserve_ids
 
 # <project root>/data/
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
-SEED_CONVERSATION_STARTERS_CSV = DATA_DIR / "seed_conversation_starters.csv"
+CONVERSATION_STARTERS_CSV = DATA_DIR / "conversation_starters.csv"
 # all comments: the seed replies and those sent by visitors (appended as they arrive)
 COMMENTS_CSV = DATA_DIR / "comments.csv"
 COMMENTS_COLUMNS = ("comment_ID", "timestamp", "text", "permission_processing",
@@ -110,7 +110,7 @@ def _flag_of(row, flags: dict[int, Flag]) -> Flag | None:
 
 
 def load_conversation_starters(
-    path: Path = SEED_CONVERSATION_STARTERS_CSV,
+    path: Path = CONVERSATION_STARTERS_CSV,
     require_permission: bool = True,
 ) -> list[ConversationStarter]:
     """Build ConversationStarters from the seed starters CSV.
@@ -442,7 +442,7 @@ class Comments(Statements[Comment]):
 
 
 def load_seed(
-    starters_path: Path = SEED_CONVERSATION_STARTERS_CSV,
+    starters_path: Path = CONVERSATION_STARTERS_CSV,
     comments_path: Path = COMMENTS_CSV,
     flags_path: Path = FLAGS_CSV,
     require_permission: bool = True,

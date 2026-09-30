@@ -43,7 +43,7 @@ def shown_slot(msg) -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # starters from data/seed_conversation_starters.csv, comments (seed replies and
+    # starters from data/conversation_starters.csv, comments (seed replies and
     # visitor comments) from data/comments.csv
     app.state.starters, app.state.comments = load_seed()
     app.state.current_slot = "top"
