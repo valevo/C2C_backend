@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C2C Admin</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #fff; --text: #1d2330; --muted: #667085; --line: #d9dde5;
+    --accent: #2f5fd0; --accent-soft: #e8eefc; --danger: #c62f2f; --danger-soft: #fdecec;
+    --new: #e7f6ec; --edited: #fff6d9; --focus: #2f5fd0; --unverified: #e3edff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 1px solid var(--line); background: var(--panel);
+           border-radius: 6px; padding: 6px 12px; }
+  button:hover { border-color: #b5bcc9; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:disabled { background: #9db0e0; border-color: #9db0e0; cursor: default; }
+  button.danger { color: var(--danger); }
+  button:disabled { opacity: .6; cursor: default; }
+  .hidden { display: none !important; }
+
+  /* login */
+  #login { max-width: 340px; margin: 15vh auto; background: var(--panel); padding: 28px;
+           border: 1px solid var(--line); border-radius: 10px; }
+  #login h1 { margin: 0 0 4px; font-size: 20px; }
+  #login p { margin: 0 0 16px; color: var(--muted); }
+  #login input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
+                 margin-bottom: 12px; }
+  #login button { width: 100%; }
+  #login-error { color: var(--danger); margin-top: 10px; min-height: 1.4em; }
+
+  /* app */
+  header { display: flex; align-items: center; gap: 16px; padding: 10px 16px;
+           background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0; }
+  .tabs { display: flex; gap: 4px; }
+  .tabs button { border: none; background: none; padding: 6px 12px; border-radius: 6px; }
+  .tabs button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  header .spacer { flex: 1; }
+  header .mode-link { color: var(--accent); text-decoration: none; }
+  header .mode-link:hover { text-decoration: underline; }
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; flex-wrap: wrap; }
+  .toolbar input[type=search] { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px;
+                                width: 240px; max-width: 100%; }
+  .toolbar select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px;
+                    background: var(--panel); }
+  .toolbar .count { color: var(--muted); }
+  .hint { padding: 0 16px 8px; color: var(--muted); max-width: 900px; }
+  #message { margin: 0 16px 10px; padding: 10px 14px; border-radius: 6px; white-space: pre-wrap; }
+  #message.error { background: var(--danger-soft); color: var(--danger); border: 1px solid #f3c4c4; }
+  #message.ok { background: var(--new); color: #1e6b38; border: 1px solid #bfe3cb; }
+
+  .table-wrap { margin: 0 16px 16px; background: var(--panel); border: 1px solid var(--line);
+                border-radius: 8px; overflow: auto; max-height: calc(100vh - 190px); }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line);
+           padding: 0; vertical-align: top; text-align: left; }
+  th { position: sticky; top: 0; background: #eef0f4; z-index: 1; padding: 8px; font-weight: 600;
+       white-space: nowrap; cursor: pointer; user-select: none; }
+  th .help { color: var(--muted); font-weight: normal; margin-left: 4px; cursor: help; }
+  th.actions { cursor: default; }
+  td > input, td > select, td > textarea { width: 100%; border: none; background: transparent;
+           padding: 7px 8px; outline: none; min-width: 60px; }
+  td > textarea { resize: none; min-width: 380px; min-height: 34px; display: block; overflow: hidden; }
+  td.col-yesno select { width: 110px; }
+  td:focus-within { outline: 2px solid var(--focus); outline-offset: -2px; }
+  td.actions { padding: 4px; white-space: nowrap; }
+  td.actions button { padding: 3px 8px; font-size: 13px; }
+  td.actions button.promote { background: var(--accent-soft); color: var(--accent); border-color: #b9c9f2;
+                              font-weight: 600; }
+  td.actions button.promote:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  tr.new td { background: var(--new); }
+  tr.edited td { background: var(--edited); }
+  tr.deleted td { background: var(--danger-soft); }
+  /* comments: rows awaiting verification stand out, verified ones are dimmed */
+  tr.unverified:not(.new):not(.edited):not(.deleted) td { background: var(--unverified); }
+  tr.verified:not(.new):not(.edited):not(.deleted) td { opacity: .55; }
+  tr.verified:hover td, tr.verified:focus-within td { opacity: 1; }
+  tr.deleted td > * { text-decoration: line-through; opacity: .6; }
+  tr.deleted td.actions > * { text-decoration: none; opacity: 1; }
+  td.col-id input { width: 80px; }
+  td.col-timestamp input { min-width: 175px; }
+  td.col-language select { width: 70px; }
+  td .with-link { display: flex; align-items: center; }
+  td .with-link input { flex: 1; width: 100%; border: none; background: transparent; padding: 7px 8px;
+                        outline: none; min-width: 60px; }
+  a.jump { padding: 0 8px; color: var(--accent); white-space: nowrap; text-decoration: none; font-size: 13px; }
+  a.jump:hover { text-decoration: underline; }
+  @keyframes jump-flash { from { background: #ffe58a; } to { background: transparent; } }
+  tr.jump-target td { animation: jump-flash 2.5s ease-out; opacity: 1 !important; }
+
+  .topics-cell { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px; min-width: 180px;
+                 cursor: pointer; min-height: 34px; border: none; background: none; width: 100%;
+                 text-align: left; border-radius: 0; }
+  .chip { background: var(--accent-soft); color: var(--accent); border-radius: 10px; padding: 1px 8px;
+          font-size: 12px; }
+  .placeholder { color: var(--muted); font-style: italic; }
+  #topic-picker { position: absolute; z-index: 10; background: var(--panel); border: 1px solid var(--line);
+                  border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.12); padding: 8px 12px; }
+  #topic-picker label { display: block; padding: 3px 0; white-space: nowrap; cursor: pointer; }
+  #topic-picker .done { margin-top: 6px; width: 100%; }
+
+  /* dialogs */
+  dialog.form { border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; width: min(620px, 94vw);
+                background: var(--panel); color: var(--text); box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+  dialog.form::backdrop { background: rgba(20,25,35,.35); }
+  dialog.form h2 { margin: 0 0 4px; font-size: 17px; }
+  dialog.form .intro { margin: 0 0 14px; color: var(--muted); }
+  #mode .choices { display: grid; gap: 10px; }
+  #mode .choices button { text-align: left; padding: 12px 14px; display: block; width: 100%; }
+  #mode .choices b { display: block; font-size: 15px; }
+  #mode .choices span { color: var(--muted); }
+  #mode .choices button.primary span { color: #dfe6fa; }
+  dialog.form .field { margin-bottom: 12px; }
+  dialog.form .field > label, dialog.form .field > .label { display: block; font-weight: 600; margin-bottom: 4px; }
+  dialog.form .field small { display: block; color: var(--muted); margin-top: 3px; }
+  dialog.form textarea { padding: 6px 8px; border: 1px solid var(--line);
+                border-radius: 6px; background: var(--panel); }
+  dialog.form textarea { width: 100%; resize: vertical; min-height: 60px; }
+  dialog.form .topics { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 2px 12px; }
+  dialog.form .topics label { cursor: pointer; }
+  dialog.form .error { color: var(--danger); min-height: 1.4em; margin: 4px 0 8px; white-space: pre-wrap; }
+  dialog.form .buttons { display: flex; justify-content: flex-end; gap: 8px; }
+  dialog.form blockquote { margin: 0 0 14px; padding: 8px 12px; border-left: 3px solid var(--line);
+                           color: var(--muted); white-space: pre-wrap; }
+  td.col-flag { padding: 7px 0; white-space: nowrap; }
+  td.col-flag .unflag { border: none; background: none; padding: 0 6px; color: var(--muted); }
+  td.col-flag .unflag:hover { color: var(--danger); }
+  td.col-flag .add-flag { border: none; background: none; width: 100%; text-align: left; padding: 0 8px;
+                          color: transparent; min-height: 20px; }
+  tr:hover td.col-flag .add-flag, td.col-flag .add-flag:focus { color: var(--muted); }
+  td.col-flag .removed { color: var(--muted); padding-left: 8px; text-decoration: line-through; }
+</style>
+</head>
+<body>
+
+<form id="login" class="hidden">
+  <h1>Comment2Conversation</h1>
+  <p>Admin page. Please enter the password.</p>
+  <input id="password" type="password" placeholder="Password" autocomplete="current-password" autofocus>
+  <button class="primary" type="submit">Log in</button>
+  <div id="login-error"></div>
+</form>
+
+<div id="app" class="hidden">
+  <header>
+    <h1>C2C Admin</h1>
+    <div class="tabs" id="tabs"></div>
+    <div class="spacer"></div>
+    <a href="/admin/verify" class="mode-link">Verify comments</a>
+    <button id="logout">Log out</button>
+  </header>
+  <div class="toolbar">
+    <button class="primary" id="save" disabled>Save changes</button>
+    <button id="discard" disabled>Discard changes</button>
+    <button id="add"></button>
+    <button id="add-starter" class="hidden">+ Add starter in all languages</button>
+    <input type="search" id="search" placeholder="Search…">
+    <select id="filter" class="hidden">
+      <option value="all">Show all comments</option>
+      <option value="unverified">Only awaiting verification</option>
+      <option value="flagged">Only flagged</option>
+    </select>
+    <span class="count" id="count"></span>
+    <span class="spacer" style="flex:1"></span>
+    <button id="reload" title="Load the latest data (e.g. new comments from visitors)">Reload</button>
+    <button id="download" title="Download the file to open it in Excel">Download CSV</button>
+  </div>
+  <div class="hint" id="hint"></div>
+  <div id="message" class="hidden"></div>
+  <div class="table-wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+</div>
+
+<div id="topic-picker" class="hidden"></div>
+
+<dialog id="to-starter" class="form">
+  <form method="dialog" id="to-starter-form">
+    <h2>Use comment as conversation starter</h2>
+    <p class="intro">Creates a new conversation starter from this comment. The comment itself stays
+      in the Comments table. Check the details below; translations are optional.</p>
+    <div class="field">
+      <label for="ts-text">Text</label>
+      <textarea id="ts-text" rows="3"></textarea>
+    </div>
+    <div class="field">
+      <div class="label">Topics <span id="ts-topics-note" style="font-weight:normal;color:var(--muted)"></span></div>
+      <div class="topics" id="ts-topics"></div>
+      <small>At least one.</small>
+    </div>
+    <div class="field">
+      <div class="label">Translations (optional)</div>
+      <div id="ts-translations"></div>
+    </div>
+    <div class="error" id="ts-error"></div>
+    <div class="buttons">
+      <button type="button" id="ts-cancel">Cancel</button>
+      <button type="submit" class="primary">Create starter</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="mode" class="form">
+  <h2>What would you like to do?</h2>
+  <p class="intro">You can switch between the two at any time.</p>
+  <div class="choices">
+    <button class="primary" id="mode-verify" type="button">
+      <b>Verify comments</b>
+      <span id="mode-verify-count">Check visitors' new comments and correct their text.</span>
+    </button>
+    <button id="mode-full" type="button">
+      <b>Full admin panel</b>
+      <span>Manage the whole C2C database: conversation starters, comments and flags.</span>
+    </button>
+  </div>
+</dialog>
+
+<dialog id="flag-dialog" class="form">
+  <form method="dialog" id="flag-form">
+    <h2>Flag comment <span id="flag-comment-id"></span></h2>
+    <p class="intro">Flagged comments are no longer shown in the app. The flag is saved right away.</p>
+    <blockquote id="flag-comment-text"></blockquote>
+    <div class="field">
+      <label for="flag-reason">Reason (optional)</label>
+      <textarea id="flag-reason" rows="3"></textarea>
+    </div>
+    <div class="error" id="flag-error"></div>
+    <div class="buttons">
+      <button type="button" id="flag-cancel">Cancel</button>
+      <button type="submit" class="primary">Flag comment</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const HINTS = {
+  starters: "Each conversation starter has one row per language, all with the same Starter ID. " +
+    "Click a cell to change it, then press “Save changes”. Changes are highlighted in yellow, " +
+    "new rows in green and rows to delete in red until you save.",
+  comments: "Click a cell to change it, then press “Save changes”. Visitors' new comments start " +
+    "unverified: set “Verified” to Yes to show them in the app. Unverified comments are listed " +
+    "first (highlighted in blue), newest first. Changes are highlighted until you save. " +
+    "To flag a comment, click its empty Flag cell; ✕ next to a flag unflags it.",
+  flags: "Flags sent by visitors or added in the Comments tab; flagged comments are not shown in " +
+    "the app. Deleting a flag here also unflags its comment.",
+};
+
+let meta = null;          // columns, topics, languages (from /admin/api/meta)
+let current = "starters"; // the table shown
+const tables = {};        // name -> {header, rows: [{key, orig, values, deleted}]}
+let sort = null;          // {col, dir}
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, props = {}, ...children) => {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children);
+  return node;
+};
+
+async function api(path, options = {}) {
+  const res = await fetch("/admin/api/" + path, {
+    headers: { "Content-Type": "application/json" }, credentials: "same-origin", ...options,
+  });
+  if (res.status === 401 && path !== "login") { showLogin(); throw new Error("Please log in."); }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail || `Something went wrong (${res.status}).`);
+  return body;
+}
+
+// --- login -------------------------------------------------------------------------
+
+function showLogin() {
+  $("app").classList.add("hidden");
+  $("login").classList.remove("hidden");
+  $("password").focus();
+}
+
+$("login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("login-error").textContent = "";
+  try {
+    await api("login", { method: "POST", body: JSON.stringify({ password: $("password").value }) });
+    $("password").value = "";
+    await start();
+  } catch (err) { $("login-error").textContent = err.message; }
+});
+
+$("logout").addEventListener("click", async () => {
+  if (hasChanges() && !confirm("You have unsaved changes. Log out anyway?")) return;
+  await api("logout", { method: "POST" });
+  for (const name in tables) delete tables[name];
+  showLogin();
+});
+
+// --- loading -----------------------------------------------------------------------
+
+async function start() {
+  meta = await api("meta");
+  await Promise.all(Object.keys(meta.tables).map(load));
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  renderTabs();
+  const tab = location.hash.slice(1);
+  show(tab in meta.tables ? tab : current);
+  if (!tab) chooseMode();  // a fresh visit; reloads keep the open tab in the address
+}
+
+function chooseMode() {
+  const n = tables.comments.rows.filter((r) => r.values.verified !== "1").length;
+  $("mode-verify-count").textContent = n === 0 ? "No comments are waiting right now."
+    : `${n} comment${n === 1 ? " is" : "s are"} waiting to be verified.`;
+  $("mode").showModal();
+  $("mode-verify").focus();
+}
+
+$("mode-verify").addEventListener("click", () => { location.href = "/admin/verify"; });
+$("mode-full").addEventListener("click", () => $("mode").close());
+
+async function load(name) {
+  setTable(name, await api("tables/" + name));
+}
+
+function setTable(name, data) {
+  tables[name] = {
+    header: data.header,
+    rows: data.rows.map((r) => ({ key: r.key, orig: r.values, values: { ...r.values }, deleted: false })),
+  };
+}
+
+// --- changes -----------------------------------------------------------------------
+
+const isNew = (row) => row.key === null;
+const isEdited = (name, row) =>
+  !isNew(row) && tables[name].header.some((c) => (row.values[c] ?? "") !== (row.orig[c] ?? ""));
+
+function changesOf(name) {
+  const changes = [];
+  for (const row of tables[name].rows) {
+    if (isNew(row) && !row.deleted) changes.push({ action: "add", values: row.values });
+    else if (!isNew(row) && row.deleted) changes.push({ action: "delete", key: row.key });
+    else if (isEdited(name, row)) changes.push({ action: "update", key: row.key, values: sentValues(name, row) });
+  }
+  return changes;
+}
+
+// flag columns are only sent when cleared, so a flag sent after the page loaded isn't undone
+function sentValues(name, row) {
+  const values = { ...row.values };
+  for (const [col, { kind }] of Object.entries(meta.tables[name].columns)) {
+    if (kind === "flag" && values[col] === (row.orig[col] ?? "")) delete values[col];
+  }
+  return values;
+}
+
+const hasChanges = () => Object.keys(tables).some((name) => changesOf(name).length > 0);
+
+function updateButtons() {
+  const n = changesOf(current).length;
+  $("save").disabled = n === 0;
+  $("discard").disabled = n === 0;
+  $("save").textContent = n ? `Save changes (${n})` : "Save changes";
+  for (const btn of $("tabs").children) {
+    const count = changesOf(btn.dataset.name).length;
+    btn.textContent = meta.tables[btn.dataset.name].title + (count ? " •" : "");
+  }
+}
+
+function rowClass(row) {
+  const verified = current !== "comments" ? "" : row.values.verified === "1" ? " verified" : " unverified";
+  if (row.deleted) return "deleted" + verified;
+  if (isNew(row)) return "new" + verified;
+  return (isEdited(current, row) ? "edited" : "") + verified;
+}
+
+$("save").addEventListener("click", async () => {
+  const changes = changesOf(current);
+  $("save").disabled = true;
+  try {
+    setTable(current, await api("tables/" + current, { method: "POST", body: JSON.stringify({ changes }) }));
+    if (current === "flags") {
+      // deleting a flag unflags its comment (the server did the same in the CSV)
+      const kept = new Set(tables.flags.rows.map((r) => r.values.flag_id));
+      for (const r of tables.comments.rows) {
+        if (r.values.flag_id && !kept.has(r.values.flag_id)) r.orig.flag_id = r.values.flag_id = "";
+      }
+    }
+    render();
+    message(`Saved ${changes.length} change${changes.length === 1 ? "" : "s"}. The app now uses the new data.`, "ok");
+  } catch (err) {
+    message(err.message, "error");
+    updateButtons();
+  }
+});
+
+$("discard").addEventListener("click", () => {
+  if (!confirm("Undo all changes you haven't saved in this table?")) return;
+  const t = tables[current];
+  t.rows = t.rows.filter((r) => !isNew(r));
+  for (const r of t.rows) { r.values = { ...r.orig }; r.deleted = false; }
+  render();
+  message("");
+});
+
+$("reload").addEventListener("click", async () => {
+  if (changesOf(current).length && !confirm("Reloading undoes the changes you haven't saved. Continue?")) return;
+  await load(current);
+  render();
+  message("Loaded the latest data.", "ok");
+});
+
+$("download").addEventListener("click", () => {
+  location.href = `/admin/api/tables/${current}/download`;
+});
+
+window.addEventListener("beforeunload", (e) => { if (hasChanges()) e.preventDefault(); });
+
+// --- adding rows -------------------------------------------------------------------
+
+const now = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                    return d.toISOString().slice(0, 19); };
+
+function nextId(name) {
+  // IDs are shared between starters and comments, so look at both tables
+  const all = [...tables.starters.rows.map((r) => +r.values.conversation_starter_ID || 0),
+               ...tables.comments.rows.map((r) => +r.values.comment_ID || 0)];
+  if (name === "comments") return Math.max(0, ...all) + 1;
+  // starters use the low numbers: continue after the highest starter ID not used by a comment
+  let id = Math.max(0, ...tables.starters.rows.map((r) => +r.values.conversation_starter_ID || 0)) + 1;
+  const used = new Set(all);
+  while (used.has(id)) id++;
+  return id;
+}
+
+function newRow(values) {
+  const row = { key: null, orig: {}, values: {}, deleted: false };
+  for (const col of tables[current].header) row.values[col] = values[col] ?? "";
+  tables[current].rows.push(row);
+  return row;
+}
+
+$("add").addEventListener("click", () => {
+  if (current === "starters") {
+    newRow({ conversation_starter_ID: String(nextId("starters")), language_code: "en",
+             permission_processing: "1", permission_sharing: "1", timestamp: now() });
+  } else {
+    newRow({ comment_ID: String(nextId("comments")), language_code: "en", verified: "1",
+             permission_processing: "1", permission_sharing: "1", timestamp: now() });
+  }
+  clearSearch();
+  render();
+  scrollToEnd();
+});
+
+$("add-starter").addEventListener("click", () => {
+  const id = String(nextId("starters"));
+  for (const lang of meta.languages) {
+    newRow({ conversation_starter_ID: id, language_code: lang,
+             permission_processing: "1", permission_sharing: "1", timestamp: now() });
+  }
+  clearSearch();
+  render();
+  scrollToEnd();
+});
+
+function clearSearch() { $("search").value = ""; $("filter").value = "all"; sort = null; }
+function scrollToEnd() {
+  const wrap = document.querySelector(".table-wrap");
+  wrap.scrollTop = wrap.scrollHeight;
+  const last = $("tbody").lastElementChild;
+  last?.querySelector("textarea")?.focus();
+}
+
+// --- rendering ---------------------------------------------------------------------
+
+function renderTabs() {
+  $("tabs").replaceChildren(...Object.keys(meta.tables).map((name) => {
+    const btn = el("button", { textContent: meta.tables[name].title });
+    btn.dataset.name = name;
+    btn.addEventListener("click", () => show(name));
+    return btn;
+  }));
+}
+
+function show(name) {
+  current = name;
+  history.replaceState(null, "", "#" + name);  // the tab stays open after a page reload
+  sort = null;
+  for (const btn of $("tabs").children) btn.classList.toggle("active", btn.dataset.name === name);
+  $("hint").textContent = HINTS[name];
+  $("add").textContent = name === "starters" ? "+ Add row" : "+ Add comment";
+  $("add").classList.toggle("hidden", name === "flags");
+  $("add-starter").classList.toggle("hidden", name !== "starters");
+  $("filter").classList.toggle("hidden", name !== "comments");
+  message("");
+  render();
+}
+
+function columns() {
+  // the columns in the order defined on the server, then any extra columns in the file
+  const defined = Object.keys(meta.tables[current].columns);
+  const header = tables[current].header;
+  return [...defined.filter((c) => header.includes(c) && meta.tables[current].columns[c].kind !== "hidden"),
+          ...header.filter((c) => !defined.includes(c))];
+}
+
+function colInfo(col) {
+  return meta.tables[current].columns[col] || { label: col, kind: "text", help: "" };
+}
+
+function visibleRows() {
+  const q = $("search").value.trim().toLowerCase();
+  const filter = current === "comments" ? $("filter").value : "all";
+  let rows = tables[current].rows.filter((r) => {
+    if (filter === "unverified" && r.values.verified === "1") return false;
+    if (filter === "flagged" && !r.values.flag_id) return false;
+    if (!q) return true;
+    return Object.values(r.values).some((v) => String(v ?? "").toLowerCase().includes(q));
+  });
+  if (sort) {
+    const numeric = ["id", "optional_id"].includes(colInfo(sort.col).kind);
+    rows = [...rows].sort((a, b) => {
+      const x = a.values[sort.col] ?? "", y = b.values[sort.col] ?? "";
+      const cmp = numeric ? (+x || 0) - (+y || 0) : x.localeCompare(y);
+      return sort.dir * cmp;
+    });
+  } else if (current === "comments") {
+    // default: unverified first, then newest first; uses the saved values so rows don't jump
+    // while being edited, and new rows stay at the end
+    const rank = (r) => (isNew(r) ? 2 : r.orig.verified === "1" ? 1 : 0);
+    rows = [...rows].sort((a, b) => rank(a) - rank(b) ||
+      (isNew(a) ? 0 : (b.orig.timestamp ?? "").localeCompare(a.orig.timestamp ?? "")));
+  }
+  return rows;
+}
+
+function render() {
+  const cols = columns();
+  const headRow = el("tr");
+  for (const col of cols) {
+    const info = colInfo(col);
+    const arrow = sort?.col === col ? (sort.dir > 0 ? " ▲" : " ▼") : "";
+    const th = el("th", { textContent: info.label + arrow, title: "Click to sort" });
+    if (info.help) th.append(el("span", { className: "help", textContent: "ⓘ", title: info.help }));
+    th.addEventListener("click", () => {
+      sort = sort?.col !== col ? { col, dir: 1 } : sort.dir > 0 ? { col, dir: -1 } : null;
+      render();
+    });
+    headRow.append(th);
+  }
+  headRow.append(el("th", { className: "actions", textContent: "" }));
+  $("thead").replaceChildren(headRow);
+
+  const rows = visibleRows();
+  $("tbody").replaceChildren(...rows.map((row) => renderRow(row, cols)));
+  $("tbody").querySelectorAll("textarea").forEach(fit);
+  const total = tables[current].rows.length;
+  $("count").textContent = rows.length === total ? `${total} rows` : `${rows.length} of ${total} rows`;
+  updateButtons();
+}
+
+const rowElements = new WeakMap();  // row -> its <tr> in the current render
+
+function renderRow(row, cols) {
+  const tr = el("tr", { className: rowClass(row) });
+  rowElements.set(row, tr);
+  const changed = () => { tr.className = rowClass(row); updateButtons(); };
+  for (const col of cols) tr.append(renderCell(row, col, changed));
+
+  const del = el("button", { className: row.deleted ? "" : "danger",
+                             textContent: row.deleted ? "Undo delete" : "Delete",
+                             title: row.deleted ? "Keep this row" : "Delete this row when you save" });
+  del.addEventListener("click", () => {
+    if (isNew(row)) {
+      tables[current].rows.splice(tables[current].rows.indexOf(row), 1);
+      render();
+      return;
+    }
+    row.deleted = !row.deleted;
+    render();
+  });
+  const actions = el("td", { className: "actions" }, del);
+  if (current === "comments") {
+    const use = el("button", { className: "promote", textContent: "Use as starter", type: "button",
+                               title: "Create a conversation starter from this comment" });
+    use.addEventListener("click", () => openToStarter(row));
+    actions.prepend(use, " ");
+  }
+  tr.append(actions);
+  return tr;
+}
+
+function renderCell(row, col, changed) {
+  const { kind } = colInfo(col);
+  const value = row.values[col] ?? "";
+  const set = (v) => { row.values[col] = v; changed(); };
+  const td = el("td", { className: "col-" + kind });
+
+  if (kind === "flag") {
+    flagCell(td, row, col, changed);
+    return td;
+  }
+  if (kind === "text" || kind === "optional_text") {
+    const ta = el("textarea", { value, rows: 1 });
+    ta.addEventListener("input", () => { set(ta.value); fit(ta); });
+    td.append(ta);
+  } else if (kind === "language") {
+    td.append(select(value, meta.languages.map((l) => [l, l]), set));
+  } else if (kind === "yesno") {
+    td.append(select(value, [["1", "Yes"], ["0", "No"]], set));
+  } else if (kind === "topics") {
+    td.append(topicsButton(row, col, changed));
+  } else if (kind === "timestamp") {
+    // readable while not edited; the stored value (e.g. 2026-09-29T14:30:00) while typing
+    const input = el("input", { value: readableTime(value), placeholder: "2026-09-29T14:30:00" });
+    const describe = () => { input.title = row.values[col] || ""; };
+    describe();
+    input.addEventListener("focus", () => { input.value = row.values[col] ?? ""; });
+    input.addEventListener("blur", () => { input.value = readableTime(row.values[col]); describe(); });
+    input.addEventListener("input", () => set(input.value));
+    td.append(input);
+  } else {
+    const input = el("input", { value, inputMode: kind.endsWith("id") ? "numeric" : "text" });
+    input.addEventListener("input", () => set(input.value));
+    const target = LINKS[current]?.[col];
+    if (target) {
+      // a link to the row this ID points to, e.g. from a comment to its flag
+      const link = el("a", { className: "jump", href: "#" + target.table });
+      const draw = () => {
+        const id = row.values[col];
+        link.classList.toggle("hidden", !id);
+        link.textContent = target.text;
+        link.title = id ? `Show ${target.what} ${id}` : "";
+      };
+      draw();
+      input.addEventListener("input", draw);
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        goToRow(target.table, target.what, (r) => r.values[target.col] === row.values[col]);
+      });
+      td.append(el("div", { className: "with-link" }, input, link));
+    } else {
+      td.append(input);
+    }
+    if (col === "reply_to") {
+      const describe = () => { input.title = parentText(input.value); };
+      describe();
+      input.addEventListener("input", describe);
+    }
+  }
+  return td;
+}
+
+// ID cells that link to another table's row: LINKS[table][column]
+const LINKS = {
+  flags: { comment_ID: { table: "comments", col: "comment_ID", what: "comment", text: "view comment" } },
+};
+
+async function goToRow(name, what, match) {
+  let row = tables[name].rows.find(match);
+  if (!row && !changesOf(name).length) {  // e.g. a flag sent after the table was loaded
+    await load(name);
+    row = tables[name].rows.find(match);
+  }
+  if (!row) { message(`There is no such ${what} in the ${meta.tables[name].title} table.`, "error"); return; }
+  $("search").value = "";
+  if (name === "comments") $("filter").value = "all";
+  show(name);
+  const tr = rowElements.get(row);
+  tr.scrollIntoView({ block: "center" });
+  tr.classList.add("jump-target");
+  tr.addEventListener("animationend", () => tr.classList.remove("jump-target"), { once: true });
+}
+
+// --- flags -------------------------------------------------------------------------
+
+// a comment's Flag cell: a link to its flag (with a button to unflag), or a way to flag it
+function flagCell(td, row, col, changed) {
+  const draw = () => {
+    const value = row.values[col] ?? "", orig = row.orig[col] ?? "";
+    if (value) {
+      const flag = tables.flags.rows.find((r) => r.values.flag_id === value);
+      const link = el("a", { className: "jump", href: "#flags", textContent: `Flag ${value}`,
+                             title: flag ? `Reason: ${flag.values.reason || "(none given)"}` : `Show flag ${value}` });
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        goToRow("flags", "flag", (r) => r.values.flag_id === value);
+      });
+      const unflag = el("button", { className: "unflag", type: "button", textContent: "✕",
+                                    title: "Unflag: remove the link to this flag when you save" });
+      unflag.addEventListener("click", () => { row.values[col] = ""; changed(); draw(); });
+      td.replaceChildren(link, unflag);
+    } else if (orig) {
+      const undo = el("a", { className: "jump", href: "#", textContent: "undo", title: "Keep the flag" });
+      undo.addEventListener("click", (e) => { e.preventDefault(); row.values[col] = orig; changed(); draw(); });
+      td.replaceChildren(el("span", { className: "removed", textContent: `Flag ${orig}` }), undo);
+    } else if (isNew(row)) {
+      td.replaceChildren();
+      td.title = "Save the comment before flagging it";
+    } else {
+      const add = el("button", { className: "add-flag", type: "button", textContent: "+ flag",
+                                 title: "Flag this comment" });
+      add.addEventListener("click", () => openFlagDialog(row, col, draw));
+      td.replaceChildren(add);
+    }
+  };
+  draw();
+}
+
+let flagTarget = null;  // {row, col, draw}: the comment the flag dialog was opened for
+
+function openFlagDialog(row, col, draw) {
+  flagTarget = { row, col, draw };
+  $("flag-comment-id").textContent = row.values.comment_ID;
+  $("flag-comment-text").textContent = row.values.text;
+  $("flag-reason").value = "";
+  $("flag-error").textContent = "";
+  $("flag-dialog").showModal();
+  $("flag-reason").focus();
+}
+
+$("flag-cancel").addEventListener("click", () => $("flag-dialog").close());
+
+$("flag-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const { row, col, draw } = flagTarget;
+  const submit = $("flag-form").querySelector("button[type=submit]");
+  submit.disabled = true;
+  try {
+    const flag = await api("flags", { method: "POST", body: JSON.stringify(
+      { comment_ID: +row.orig.comment_ID, reason: $("flag-reason").value }) });
+    tables.flags.rows.push({ key: flag.key, orig: flag.values, values: { ...flag.values }, deleted: false });
+    row.orig[col] = row.values[col] = flag.values.flag_id;  // already saved on the server
+    draw();
+    updateButtons();
+    $("flag-dialog").close();
+    message(`Flagged comment ${row.orig.comment_ID}; it is no longer shown in the app.`, "ok");
+  } catch (err) {
+    $("flag-error").textContent = err.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+const TIME_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+// "2026-09-29T14:30:00" -> e.g. "29 Sep 2026, 14:30"; anything unparseable is shown as is
+function readableTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  return isNaN(date) ? value : TIME_FORMAT.format(date);
+}
+
+// grow a text box to show all of its text
+function fit(ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+
+function select(value, options, onChange) {
+  const sel = el("select");
+  if (!options.some(([v]) => v === value)) options = [[value, value], ...options];
+  for (const [v, label] of options) sel.append(el("option", { value: v, textContent: label, selected: v === value }));
+  sel.addEventListener("change", () => onChange(sel.value));
+  return sel;
+}
+
+function parentText(id) {
+  if (!id) return "Not a reply";
+  const starter = tables.starters.rows.find((r) => r.values.conversation_starter_ID === id);
+  if (starter) return "Replies to starter: " + starter.values.text;
+  const comment = tables.comments.rows.find((r) => r.values.comment_ID === id);
+  if (comment) return "Replies to comment: " + comment.values.text;
+  return "No starter or comment has this ID";
+}
+
+// --- topics ------------------------------------------------------------------------
+
+const splitTopics = (v) => (v || "").split(",").map((t) => t.trim()).filter(Boolean);
+
+function topicsButton(row, col, changed) {
+  const btn = el("button", { className: "topics-cell", type: "button" });
+  const draw = () => {
+    const topics = splitTopics(row.values[col]);
+    btn.replaceChildren(...(topics.length
+      ? topics.map((t) => el("span", { className: "chip", textContent: meta.topics[t] || t, title: t }))
+      : [el("span", { className: "placeholder",
+                      textContent: current === "comments" ? "from parent" : "choose…" })]));
+  };
+  draw();
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openTopicPicker(btn, splitTopics(row.values[col]), (topics) => {
+      row.values[col] = topics.join(", ");
+      draw();
+      changed();
+    });
+  });
+  return btn;
+}
+
+function openTopicPicker(anchor, selected, onChange) {
+  const picker = $("topic-picker");
+  const chosen = new Set(selected);
+  picker.replaceChildren(...Object.entries(meta.topics).map(([id, label]) => {
+    const box = el("input", { type: "checkbox", checked: chosen.has(id) });
+    box.addEventListener("change", () => {
+      box.checked ? chosen.add(id) : chosen.delete(id);
+      onChange(Object.keys(meta.topics).filter((t) => chosen.has(t)));
+    });
+    return el("label", {}, box, " " + label);
+  }));
+  const done = el("button", { className: "done", type: "button", textContent: "Done" });
+  done.addEventListener("click", closeTopicPicker);
+  picker.append(done);
+  const rect = anchor.getBoundingClientRect();
+  picker.style.left = Math.min(rect.left + scrollX, innerWidth - 280) + "px";
+  picker.style.top = rect.bottom + scrollY + 2 + "px";
+  picker.classList.remove("hidden");
+}
+
+function closeTopicPicker() { $("topic-picker").classList.add("hidden"); }
+document.addEventListener("click", (e) => { if (!$("topic-picker").contains(e.target)) closeTopicPicker(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTopicPicker(); });
+document.querySelector(".table-wrap").addEventListener("scroll", closeTopicPicker);
+
+// --- comment -> conversation starter ------------------------------------------------
+
+// a comment's own topics, or else those of the starter/comment it (indirectly) replies to
+function effectiveTopics(values, seen = new Set()) {
+  const own = splitTopics(values.topics);
+  if (own.length || !values.reply_to || seen.has(values.reply_to)) return own;
+  seen.add(values.reply_to);
+  const starter = tables.starters.rows.find((r) => r.values.conversation_starter_ID === values.reply_to);
+  if (starter) return splitTopics(starter.values.topics);
+  const parent = tables.comments.rows.find((r) => r.values.comment_ID === values.reply_to);
+  return parent ? effectiveTopics(parent.values, seen) : [];
+}
+
+let toStarterSource = null;  // the comment row the dialog was opened for
+
+function openToStarter(row) {
+  toStarterSource = row;
+  const v = row.values;
+  const language = v.language_code || meta.languages[0];
+  $("ts-text").value = v.text || "";
+
+  const own = splitTopics(v.topics);
+  const topics = new Set(effectiveTopics(v));
+  $("ts-topics-note").textContent = !own.length && topics.size ? "(taken from the starter it replies to)" : "";
+  $("ts-topics").replaceChildren(...Object.entries(meta.topics).map(([id, label]) =>
+    el("label", {}, el("input", { type: "checkbox", value: id, checked: topics.has(id) }), " " + label)));
+
+  $("ts-translations").replaceChildren(...meta.languages
+    .filter((l) => l !== language)
+    .map((l) => {
+      const ta = el("textarea", { rows: 2, placeholder: `Text in ${l} (leave empty to skip)` });
+      ta.dataset.lang = l;
+      return el("div", { className: "field" }, el("label", { textContent: l }), ta);
+    }));
+
+  $("ts-error").textContent = "";
+  $("to-starter").showModal();
+  $("ts-text").focus();
+}
+
+$("ts-cancel").addEventListener("click", () => $("to-starter").close());
+
+$("to-starter-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = toStarterSource.values;
+  const text = $("ts-text").value.trim();
+  const topics = [...$("ts-topics").querySelectorAll("input:checked")].map((b) => b.value);
+  const errors = [];
+  if (!text) errors.push("Please enter the text.");
+  if (!topics.length) errors.push("Please choose at least one topic.");
+  if (errors.length) { $("ts-error").textContent = errors.join("\n"); return; }
+
+  // the rest is filled in automatically; the language comes from the comment
+  const id = String(nextId("starters"));
+  const base = { conversation_starter_ID: id, topics: topics.join(", "), timestamp: now(),
+                 permission_processing: "1", permission_sharing: "1" };
+  const languages = [[v.language_code || meta.languages[0], text],
+    ...[...$("ts-translations").querySelectorAll("textarea")]
+       .filter((ta) => ta.value.trim()).map((ta) => [ta.dataset.lang, ta.value.trim()])];
+  for (const [language_code, t] of languages) {   // the first row is the original
+    const row = { key: null, orig: {}, values: {}, deleted: false };
+    const values = { ...base, language_code, text: t };
+    for (const col of tables.starters.header) row.values[col] = values[col] ?? "";
+    tables.starters.rows.push(row);
+  }
+  $("to-starter").close();
+  clearSearch();
+  show("starters");
+  scrollToEnd();
+  message(`Added starter ${id} (in green). Press “Save changes” to use it in the app.`, "ok");
+});
+
+// --- misc --------------------------------------------------------------------------
+
+function message(text, type) {
+  const box = $("message");
+  box.textContent = text;
+  box.className = text ? type : "hidden";
+}
+
+$("search").addEventListener("input", render);
+$("filter").addEventListener("change", render);
+
+start().catch(() => showLogin());
+</script>
+</body>
+</html>

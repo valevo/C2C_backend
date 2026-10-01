@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C2C Verify</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #fff; --text: #1d2330; --muted: #667085; --line: #d9dde5;
+    --accent: #2f5fd0; --accent-soft: #e8eefc; --danger: #c62f2f; --danger-soft: #fdecec;
+    --ok: #1e6b38; --ok-soft: #e7f6ec; --edited: #fff6d9;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 1px solid var(--line); background: var(--panel);
+           border-radius: 6px; padding: 7px 14px; }
+  button:hover { border-color: #b5bcc9; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .6; cursor: default; }
+  .hidden { display: none !important; }
+
+  /* login */
+  #login { max-width: 340px; margin: 15vh auto; background: var(--panel); padding: 28px;
+           border: 1px solid var(--line); border-radius: 10px; }
+  #login h1 { margin: 0 0 4px; font-size: 20px; }
+  #login p { margin: 0 0 16px; color: var(--muted); }
+  #login input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
+                 margin-bottom: 12px; }
+  #login button { width: 100%; }
+  #login-error { color: var(--danger); margin-top: 10px; min-height: 1.4em; }
+
+  /* page */
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap;
+           background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 1; }
+  header h1 { font-size: 16px; margin: 0; }
+  header .count { color: var(--muted); }
+  header .spacer { flex: 1; }
+  header a { color: var(--accent); text-decoration: none; }
+  header a:hover { text-decoration: underline; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  .hint { color: var(--muted); margin: 0 0 16px; }
+  #message { margin: 0 0 12px; padding: 10px 14px; border-radius: 6px; }
+  #message.error { background: var(--danger-soft); color: var(--danger); }
+  #message.ok { background: var(--ok-soft); color: var(--ok); }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+          margin-bottom: 12px; transition: opacity .3s, transform .3s; }
+  .card.done { opacity: 0; transform: translateX(24px); }
+  .card .meta { color: var(--muted); font-size: 13px; display: flex; gap: 6px 14px; flex-wrap: wrap; }
+  .card .flagged { color: var(--danger); }
+  .card .parent { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--line); color: var(--muted);
+                  font-size: 14px; white-space: pre-wrap; }
+  .card .parent b { font-weight: 600; }
+  .card textarea { width: 100%; margin: 10px 0; padding: 8px 10px; border: 1px solid var(--line);
+                   border-radius: 6px; resize: vertical; min-height: 64px; background: var(--panel); }
+  .card textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .card.edited textarea { background: var(--edited); }
+  .card .actions { display: flex; align-items: center; gap: 8px; }
+  .card .actions .note { color: var(--muted); font-size: 13px; }
+  .card .error { color: var(--danger); font-size: 14px; }
+  .empty { text-align: center; color: var(--muted); padding: 48px 16px; background: var(--panel);
+           border: 1px dashed var(--line); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<form id="login" class="hidden">
+  <h1>Comment2Conversation</h1>
+  <p>Verify comments. Please enter the password.</p>
+  <input id="password" type="password" placeholder="Password" autocomplete="current-password" autofocus>
+  <button class="primary" type="submit">Log in</button>
+  <div id="login-error"></div>
+</form>
+
+<div id="app" class="hidden">
+  <header>
+    <h1>Verify comments</h1>
+    <span class="count" id="count"></span>
+    <span class="spacer"></span>
+    <button id="reload" title="Look for new comments from visitors">Reload</button>
+    <a href="/admin#comments">Full admin panel</a>
+    <button id="logout">Log out</button>
+  </header>
+  <main>
+    <p class="hint">New comments from visitors are only shown in the app once they are verified.
+      Correct the text if needed, then press “Verify”.</p>
+    <div id="message" class="hidden"></div>
+    <div id="list"></div>
+  </main>
+</div>
+
+<script>
+let comments = [], starters = [], flags = [];  // rows as sent by /admin/api/tables/...
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, props = {}, ...children) => {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children);
+  return node;
+};
+
+async function api(path, options = {}) {
+  const res = await fetch("/admin/api/" + path, {
+    headers: { "Content-Type": "application/json" }, credentials: "same-origin", ...options,
+  });
+  if (res.status === 401 && path !== "login") { showLogin(); throw new Error("Please log in."); }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail || `Something went wrong (${res.status}).`);
+  return body;
+}
+
+// --- login -------------------------------------------------------------------------
+
+function showLogin() {
+  $("app").classList.add("hidden");
+  $("login").classList.remove("hidden");
+  $("password").focus();
+}
+
+$("login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("login-error").textContent = "";
+  try {
+    await api("login", { method: "POST", body: JSON.stringify({ password: $("password").value }) });
+    $("password").value = "";
+    await start();
+  } catch (err) { $("login-error").textContent = err.message; }
+});
+
+$("logout").addEventListener("click", async () => {
+  if (edited() && !confirm("You have corrected texts you haven't verified yet. Log out anyway?")) return;
+  await api("logout", { method: "POST" });
+  showLogin();
+});
+
+// --- loading -----------------------------------------------------------------------
+
+async function start() {
+  await load();
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+}
+
+async function load() {
+  [comments, starters, flags] = (await Promise.all(
+    ["comments", "starters", "flags"].map((name) => api("tables/" + name)))).map((t) => t.rows);
+  render();
+}
+
+$("reload").addEventListener("click", async () => {
+  if (edited() && !confirm("Reloading undoes the corrections you haven't verified yet. Continue?")) return;
+  await load();
+  message("Loaded the latest comments.", "ok");
+});
+
+const edited = () => [...document.querySelectorAll(".card.edited")].length > 0;
+window.addEventListener("beforeunload", (e) => { if (edited()) e.preventDefault(); });
+
+// --- list --------------------------------------------------------------------------
+
+function unverified() {
+  // newest first, like the full admin panel
+  return comments.filter((r) => r.values.verified !== "1")
+    .sort((a, b) => (b.values.timestamp || "").localeCompare(a.values.timestamp || ""));
+}
+
+function render() {
+  const rows = unverified();
+  $("list").replaceChildren(...(rows.length ? rows.map(card)
+    : [el("div", { className: "empty", textContent: "All comments are verified. Nothing to do." })]));
+  updateCount();
+}
+
+function updateCount() {
+  const n = document.querySelectorAll(".card:not(.done)").length;
+  $("count").textContent = n === 1 ? "1 comment to verify" : `${n} comments to verify`;
+  if (n === 0 && !$("list").querySelector(".empty")) {
+    $("list").append(el("div", { className: "empty", textContent: "All comments are verified. Nothing to do." }));
+  }
+}
+
+function card(row) {
+  const v = row.values;
+  const meta = el("div", { className: "meta" },
+    el("span", { textContent: `Comment ${v.comment_ID}` }),
+    el("span", { textContent: (v.language_code || "").toUpperCase() }),
+    el("span", { textContent: readableTime(v.timestamp), title: v.timestamp || "" }));
+  if (v.flag_id) {
+    const flag = flags.find((f) => f.values.flag_id === v.flag_id);
+    meta.append(el("span", { className: "flagged",
+      textContent: `Flagged${flag?.values.reason ? ": " + flag.values.reason : ""}`,
+      title: "Flagged comments aren't shown in the app, even when verified." }));
+  }
+
+  const ta = el("textarea", { value: v.text || "", rows: 3 });
+  const verify = el("button", { className: "primary", textContent: "Verify" });
+  const reset = el("button", { textContent: "Undo correction", className: "hidden" });
+  const note = el("span", { className: "note" });
+  const error = el("div", { className: "error" });
+  const box = el("div", { className: "card" }, meta, ...parent(v), ta,
+                 el("div", { className: "actions" }, verify, reset, note), error);
+
+  const changed = () => {
+    const isEdited = ta.value !== (v.text || "");
+    box.classList.toggle("edited", isEdited);
+    reset.classList.toggle("hidden", !isEdited);
+    note.textContent = isEdited ? "The corrected text is saved when you verify." : "";
+  };
+  ta.addEventListener("input", changed);
+  reset.addEventListener("click", () => { ta.value = v.text || ""; changed(); });
+
+  verify.addEventListener("click", async () => {
+    const text = ta.value.trim();
+    if (!text) { error.textContent = "The text can't be empty."; return; }
+    verify.disabled = true;
+    error.textContent = "";
+    // flag_id is left out so the server keeps it (it may have been flagged since this loaded)
+    const { flag_id, ...values } = v;
+    try {
+      await api("tables/comments", { method: "POST", body: JSON.stringify(
+        { changes: [{ action: "update", key: row.key, values: { ...values, text, verified: "1" } }] }) });
+      v.verified = "1";
+      v.text = text;
+      box.classList.remove("edited");
+      box.classList.add("done");
+      setTimeout(() => { box.remove(); updateCount(); }, 300);  // after the fade-out
+      updateCount();
+      message(`Verified comment ${v.comment_ID}; it is now shown in the app.`, "ok");
+    } catch (err) {
+      error.textContent = err.message;
+      verify.disabled = false;
+    }
+  });
+  return box;
+}
+
+// what the comment replies to, for context
+function parent(v) {
+  if (!v.reply_to) return [];
+  const sameLanguage = (r) => r.values.language_code === v.language_code;
+  const group = starters.filter((r) => r.values.conversation_starter_ID === v.reply_to);
+  const starter = group.find(sameLanguage) || group[0];
+  const comment = comments.find((r) => r.values.comment_ID === v.reply_to);
+  const [label, text] = starter ? ["Replies to the conversation starter", starter.values.text]
+                      : comment ? ["Replies to the comment", comment.values.text]
+                      : ["Replies to", `#${v.reply_to} (not found)`];
+  return [el("div", { className: "parent" }, el("b", { textContent: label + ": " }), text)];
+}
+
+// --- misc --------------------------------------------------------------------------
+
+const TIME_FORMAT = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+// "2026-09-29T14:30:00" -> e.g. "29 Sep 2026, 14:30"; anything unparseable is shown as is
+function readableTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  return isNaN(date) ? value : TIME_FORMAT.format(date);
+}
+
+function message(text, type) {
+  const box = $("message");
+  box.textContent = text;
+  box.className = text ? type : "hidden";
+}
+
+start().catch(() => showLogin());
+</script>
+</body>
+</html>

@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, ValidationError
 from starlette.datastructures import State
 
+from app.admin import router as admin_router
 from app.conversation import SampledConversation
 from app.data import append_comment_csv, load_seed, store_flag_csv
 from app.i18n import DEFAULT_LANGUAGE, MESSAGES, Language
@@ -95,6 +96,10 @@ def list_images(inline: bool = False):
 # static images for the frontend, e.g. GET /images/c2cillustrations1.svg
 # (mounted after the /images route so that route is matched first)
 app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
+
+
+# password-protected page for editing the CSVs, see app/admin.py
+app.include_router(admin_router)
 
 
 @app.get("/db")

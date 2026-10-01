@@ -11,11 +11,28 @@ python -m app.main
 or `uvicorn app.main:app --reload`. Then open `tests/test_client.html` in a browser
 and click Connect.
 
+## Admin page
+
+`/admin` is a spreadsheet-like page for adding, editing and deleting rows of
+`data/conversation_starters.csv`, `data/comments.csv` and `data/flags.csv` (e.g. to verify
+visitors' comments and review their flags). `/admin/verify` is a simpler page that only lists
+unverified comments, to correct and verify them; `/admin` asks which of the two you want.
+It asks for the password in the `C2C_ADMIN_PASSWORD` environment variable and is disabled
+when that isn't set:
+
+```
+C2C_ADMIN_PASSWORD=... python -m app.main
+```
+
+Saved changes are checked with the same loader the app uses at startup, written to the CSV,
+and used by the running app right away.
+
 ## Layout
 
 ```
 app/
   main.py        FastAPI app, lifespan, GET /db, uvicorn entry
+  admin.py       /admin: password-protected CSV editor (page: admin.html)
   data.py        in-memory DB and seed data
   ws/
     manager.py   connection registry, anonymous IDs, broadcast
