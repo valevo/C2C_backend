@@ -1,7 +1,9 @@
 """/admin: a password-protected page for editing the conversation starters, comments and flags CSVs.
 
 The password comes from the C2C_ADMIN_PASSWORD environment variable; without it, /admin is
-disabled. This is low security by design: it only keeps public visitors out.
+disabled. This is low security by design: it only keeps public visitors out. No cookies are
+used: logging in returns a token, which the pages keep in localStorage and send in the
+X-Admin-Token header.
 
 The page (admin.html) sends a list of row changes (add/update/delete); they are applied to
 the CSV as it is on disk at that moment, so comments sent by visitors in the meantime are
@@ -22,7 +24,7 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
@@ -31,7 +33,7 @@ from app.i18n import TOPICS
 from app.models.fields import SUPPORTED_LANGUAGES
 
 PASSWORD_ENV = "C2C_ADMIN_PASSWORD"
-COOKIE = "c2c_admin"
+TOKEN_HEADER = "X-Admin-Token"
 PAGE = Path(__file__).with_name("admin.html")
 VERIFY_PAGE = Path(__file__).with_name("admin_verify.html")  # just for verifying comments
 
@@ -219,7 +221,7 @@ def _token(password: str) -> str:
 
 
 def _require_login(request: Request) -> None:
-    if not hmac.compare_digest(request.cookies.get(COOKIE, ""), _token(_password())):
+    if not hmac.compare_digest(request.headers.get(TOKEN_HEADER, ""), _token(_password())):
         raise HTTPException(401, "Please log in.")
 
 
@@ -244,19 +246,12 @@ class Login(BaseModel):
 
 
 @router.post("/api/login")
-async def login(body: Login, response: Response):
+async def login(body: Login):
+    """Returns the token to send in the X-Admin-Token header (logging out is forgetting it)."""
     password = _password()
     if not hmac.compare_digest(body.password.encode(), password.encode()):
         raise HTTPException(401, "Wrong password.")
-    response.set_cookie(COOKIE, _token(password), httponly=True, samesite="strict",
-                        max_age=60 * 60 * 24 * 30)
-    return {"ok": True}
-
-
-@router.post("/api/logout")
-async def logout(response: Response):
-    response.delete_cookie(COOKIE)
-    return {"ok": True}
+    return {"token": _token(password)}
 
 
 @router.get("/api/meta")
