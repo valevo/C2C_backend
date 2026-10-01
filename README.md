@@ -17,12 +17,7 @@ and click Connect.
 `data/conversation_starters.csv`, `data/comments.csv` and `data/flags.csv` (e.g. to verify
 visitors' comments and review their flags). `/admin/verify` is a simpler page that only lists
 unverified comments, to correct and verify them; `/admin` asks which of the two you want.
-It asks for the password in the `C2C_ADMIN_PASSWORD` environment variable and is disabled
-when that isn't set:
-
-```
-C2C_ADMIN_PASSWORD=... python -m app.main
-```
+Both ask for the password set as `PASSWORD` in `app/admin.py`.
 
 Saved changes are checked with the same loader the app uses at startup, written to the CSV,
 and used by the running app right away.

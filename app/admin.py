@@ -1,9 +1,8 @@
 """/admin: a password-protected page for editing the conversation starters, comments and flags CSVs.
 
-The password comes from the C2C_ADMIN_PASSWORD environment variable; without it, /admin is
-disabled. This is low security by design: it only keeps public visitors out. No cookies are
-used: logging in returns a token, which the pages keep in localStorage and send in the
-X-Admin-Token header.
+The password is PASSWORD below. This is low security by design: it only keeps public
+visitors out. No cookies are used: logging in returns a token, which the pages keep in
+localStorage and send in the X-Admin-Token header.
 
 The page (admin.html) sends a list of row changes (add/update/delete); they are applied to
 the CSV as it is on disk at that moment, so comments sent by visitors in the meantime are
@@ -32,7 +31,7 @@ from app import data
 from app.i18n import TOPICS
 from app.models.fields import SUPPORTED_LANGUAGES
 
-PASSWORD_ENV = "C2C_ADMIN_PASSWORD"
+PASSWORD = "C2C-admin"
 TOKEN_HEADER = "X-Admin-Token"
 PAGE = Path(__file__).with_name("admin.html")
 VERIFY_PAGE = Path(__file__).with_name("admin_verify.html")  # just for verifying comments
@@ -207,21 +206,13 @@ def _check_loadable(csvs: dict[str, tuple[list[str], list[dict]]]):
 
 # --- Password --------------------------------------------------------------------------
 
-def _password() -> str:
-    password = os.environ.get(PASSWORD_ENV, "")
-    if not password:
-        raise HTTPException(503, f"The admin page is disabled: set the {PASSWORD_ENV} "
-                                 "environment variable and restart the app.")
-    return password
-
-
 def _token(password: str) -> str:
     # changes with the password, so changing it logs everyone out
     return hmac.new(password.encode(), b"c2c-admin", hashlib.sha256).hexdigest()
 
 
 def _require_login(request: Request) -> None:
-    if not hmac.compare_digest(request.headers.get(TOKEN_HEADER, ""), _token(_password())):
+    if not hmac.compare_digest(request.headers.get(TOKEN_HEADER, ""), _token(PASSWORD)):
         raise HTTPException(401, "Please log in.")
 
 
@@ -230,14 +221,12 @@ def _require_login(request: Request) -> None:
 @router.get("", response_class=HTMLResponse)
 async def admin_page():
     """The admin page itself; it holds no data and asks for the password when needed."""
-    _password()
     return HTMLResponse(PAGE.read_text(encoding="utf-8"))
 
 
 @router.get("/verify", response_class=HTMLResponse)
 async def verify_page():
     """A simpler page that only lists unverified comments, to verify (and correct) them."""
-    _password()
     return HTMLResponse(VERIFY_PAGE.read_text(encoding="utf-8"))
 
 
@@ -248,10 +237,9 @@ class Login(BaseModel):
 @router.post("/api/login")
 async def login(body: Login):
     """Returns the token to send in the X-Admin-Token header (logging out is forgetting it)."""
-    password = _password()
-    if not hmac.compare_digest(body.password.encode(), password.encode()):
+    if not hmac.compare_digest(body.password.encode(), PASSWORD.encode()):
         raise HTTPException(401, "Wrong password.")
-    return {"token": _token(password)}
+    return {"token": _token(PASSWORD)}
 
 
 @router.get("/api/meta")
