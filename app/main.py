@@ -21,8 +21,8 @@ from app.i18n import DEFAULT_LANGUAGE, MESSAGES, Language
 from app.models import (CommentCreateMessage, ConversationStarter, ConversationStarterRender, Flag,
                         FlagCreateMessage, incoming_adapter, render)
 
-INTERVAL=20
-LONG_INTERVAL=40  # after a conversation starter or a new comment: INTERVAL + the frontend's 20s animation
+INTERVAL=10
+LONG_INTERVAL=20  # after a conversation starter or a new comment: INTERVAL + the frontend's 20s animation
 MIN_CONVO_LEN=3
 IMAGES_DIR = Path(__file__).parent / "images"
 
